@@ -7,7 +7,7 @@ Abi-Rechner
 
 - **Runde 1:** Fächer mit Namen und Punkten (0 bis 15) eintragen und entfernen. Der Durchschnitt wird sofort mit zwei Nachkommastellen angezeigt. Ungültige Eingaben (leer, unter 0, über 15) werden abgelehnt.
   - Test: Mathe 10, Deutsch 12, Englisch 14 → Schnitt 12,00. Dann 16 eingeben → muss abgelehnt werden.
-- **Runde 2:** Zielschnitt in Punkten eingeben. Die Seite zeigt, wie weit du darüber oder darunter liegst. Liegt der Schnitt darunter, ist die Anzeige deutlich rot, mit einer klaren, direkten Ansage.
+- **Runde 2:** Zielschnitt in Note eingeben, die dann in Punkte mit der Abi-formel umgerechnet wird. Die Seite zeigt, wie weit du darüber oder darunter liegst. Liegt der Schnitt darunter, ist die Anzeige deutlich rot, mit einer klaren, direkten Ansage.
   - Test: Schnitt 12,00, Ziel 13 → „1,00 Punkte unter Ziel“ in Rot.
 - **Runde 3:** Fächer, Punkte und Zielschnitt bleiben im Browser gespeichert (localStorage), auch nach dem Neuladen. Dazu ein Zurücksetzen-Button.
   - Test: Werte eintragen, F5 → alles noch da. Zurücksetzen → alles leer.
