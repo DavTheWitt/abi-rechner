@@ -53,6 +53,30 @@
       font-size: 1.5rem;
       margin-top: 1.5rem;
     }
+    #ziel {
+      width: 5rem;
+      border: 3px solid #999;
+    }
+    #ziel.unter-ziel {
+      background: #ffcdd2;
+      border-color: #c62828;
+    }
+    #ziel.ziel-erreicht {
+      background: #c8e6c9;
+      border-color: #2e7d32;
+    }
+    #ziel-abstand {
+      font-size: 1.2rem;
+      min-height: 1.5em;
+    }
+    #ziel-abstand.unter-ziel {
+      color: #c62828;
+      font-weight: bold;
+    }
+    #ziel-abstand.ziel-erreicht {
+      color: #2e7d32;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -81,6 +105,12 @@
 
   <p id="schnitt">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
 
+  <label>
+    Zielschnitt (Punkte)
+    <input id="ziel" type="text" inputmode="decimal" autocomplete="off">
+  </label>
+  <p id="ziel-abstand" role="status"></p>
+
   <script src="rechner.js"></script>
   <script>
     const faecher = [];
@@ -92,6 +122,26 @@
     const liste = document.getElementById("liste");
     const leerHinweis = document.getElementById("leer-hinweis");
     const schnittWert = document.getElementById("schnitt-wert");
+    const zielFeld = document.getElementById("ziel");
+    const zielAbstand = document.getElementById("ziel-abstand");
+
+    function zeigeZiel() {
+      zielFeld.classList.remove("unter-ziel", "ziel-erreicht");
+      zielAbstand.classList.remove("unter-ziel", "ziel-erreicht");
+
+      const ziel = pruefeZiel(zielFeld.value);
+      if (!ziel.ok) {
+        zielAbstand.textContent = ziel.fehler;
+        return;
+      }
+      const vergleich = vergleicheMitZiel(durchschnitt(faecher), ziel.wert);
+      zielAbstand.textContent = formatiereAbstand(vergleich);
+      if (vergleich !== null) {
+        const klasse = vergleich.erreicht ? "ziel-erreicht" : "unter-ziel";
+        zielFeld.classList.add(klasse);
+        zielAbstand.classList.add(klasse);
+      }
+    }
 
     function zeichne() {
       liste.replaceChildren();
@@ -120,7 +170,10 @@
 
       leerHinweis.hidden = faecher.length > 0;
       schnittWert.textContent = formatiereSchnitt(durchschnitt(faecher));
+      zeigeZiel();
     }
+
+    zielFeld.addEventListener("input", zeigeZiel);
 
     formular.addEventListener("submit", (event) => {
       event.preventDefault();
