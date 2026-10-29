@@ -14,7 +14,7 @@ Abi-Rechner
 
 ### Version 2 (Runden 4 bis 7, nach dem Hooks-Block)
 
-- **Runde 4:** Jedes Fach bekommt einen Gewichtungsfaktor (Standard 1), den du selbst einstellst. Der Durchschnitt wird gewichtet berechnet. Keine fest eingebaute Regel für Leistungs- oder Grundkurse (so haben wir es heute entschieden).
+- **Runde 4:** Jedes Fach bekommt einen Gewichtungsfaktor (Standard 1), den du selbst einstellst. Der Durchschnitt wird gewichtet berechnet. Keine fest eingebaute Regel für Leistungs- oder Grundkurse.
   - Test: Mathe Faktor 2 mit 10 Punkten, Deutsch Faktor 1 mit 13 → (10×2 + 13×1) / 3 = 11,00.
 - **Runde 5:** „Was brauche ich noch?“: Pro Fach trägst du ein, wie viele Klausuren noch ausstehen. Die Seite berechnet, wie viele Punkte du im Schnitt noch brauchst, um dein Ziel zu erreichen. Ist es nicht mehr erreichbar, sagt sie das ehrlich. Claude erklärt dir vorher seine vereinfachende Annahme.
 - **Runde 6:** Umrechnung von Punkten in eine Note. Claude recherchiert die in Hamburg übliche Umrechnung und nennt die Quelle, bevor er sie einbaut. Du öffnest die Quelle selbst und vergleichst.
