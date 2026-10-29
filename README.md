@@ -20,6 +20,6 @@ Abi-Rechner
 - **Runde 6:** Umrechnung von Punkten in eine Note. Claude recherchiert die in Hamburg übliche Umrechnung und nennt die Quelle, bevor er sie einbaut. Du öffnest die Quelle selbst und vergleichst.
 - **Runde 7:** Handytauglich und ordentliches Design, damit du den Link zeigen kannst. Weiter kein Framework, keine externen Bibliotheken.
 
-### Ausdrücklich nicht dabei
+### Ausdrücklich fürs erste nicht dabei
 
 Login, Push-Nachrichten, App Store, Datenbank, Hausaufgaben und Klausurtermine, die echte Abi-Berechnung mit Blöcken und einzubringenden Kursen.
