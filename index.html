@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Abi-Rechner</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 40rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #222;
+    }
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+    }
+    input {
+      font-size: 1rem;
+      padding: 0.3rem;
+    }
+    #punkte {
+      width: 5rem;
+    }
+    button {
+      font-size: 1rem;
+      padding: 0.3rem 0.8rem;
+      cursor: pointer;
+    }
+    #fehler {
+      color: #b00020;
+      min-height: 1.5em;
+      margin: 0.5rem 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.4rem;
+      border-bottom: 1px solid #ddd;
+    }
+    #schnitt {
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Abi-Rechner</h1>
+
+  <form id="fach-formular" novalidate>
+    <label>
+      Fach
+      <input id="name" type="text" autocomplete="off">
+    </label>
+    <label>
+      Punkte (0–15)
+      <input id="punkte" type="text" inputmode="numeric" autocomplete="off">
+    </label>
+    <button type="submit">Hinzufügen</button>
+  </form>
+  <p id="fehler" role="alert"></p>
+
+  <table>
+    <thead>
+      <tr><th>Fach</th><th>Punkte</th><th></th></tr>
+    </thead>
+    <tbody id="liste"></tbody>
+  </table>
+  <p id="leer-hinweis">Noch keine Fächer eingetragen.</p>
+
+  <p id="schnitt">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
+
+  <script src="rechner.js"></script>
+  <script>
+    const faecher = [];
+
+    const formular = document.getElementById("fach-formular");
+    const nameFeld = document.getElementById("name");
+    const punkteFeld = document.getElementById("punkte");
+    const fehlerAnzeige = document.getElementById("fehler");
+    const liste = document.getElementById("liste");
+    const leerHinweis = document.getElementById("leer-hinweis");
+    const schnittWert = document.getElementById("schnitt-wert");
+
+    function zeichne() {
+      liste.replaceChildren();
+      faecher.forEach((fach, index) => {
+        const zeile = document.createElement("tr");
+
+        const nameZelle = document.createElement("td");
+        nameZelle.textContent = fach.name;
+
+        const punkteZelle = document.createElement("td");
+        punkteZelle.textContent = fach.punkte;
+
+        const knopfZelle = document.createElement("td");
+        const entfernen = document.createElement("button");
+        entfernen.type = "button";
+        entfernen.textContent = "Entfernen";
+        entfernen.addEventListener("click", () => {
+          faecher.splice(index, 1);
+          zeichne();
+        });
+        knopfZelle.appendChild(entfernen);
+
+        zeile.append(nameZelle, punkteZelle, knopfZelle);
+        liste.appendChild(zeile);
+      });
+
+      leerHinweis.hidden = faecher.length > 0;
+      schnittWert.textContent = formatiereSchnitt(durchschnitt(faecher));
+    }
+
+    formular.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const name = pruefeName(nameFeld.value);
+      if (!name.ok) {
+        fehlerAnzeige.textContent = name.fehler;
+        nameFeld.focus();
+        return;
+      }
+      const punkte = pruefePunkte(punkteFeld.value);
+      if (!punkte.ok) {
+        fehlerAnzeige.textContent = punkte.fehler;
+        punkteFeld.focus();
+        return;
+      }
+
+      faecher.push({ name: name.wert, punkte: punkte.wert });
+      fehlerAnzeige.textContent = "";
+      formular.reset();
+      nameFeld.focus();
+      zeichne();
+    });
+
+    zeichne();
+  </script>
+</body>
+</html>
