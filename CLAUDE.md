@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Das Repository ist noch ein Stub: Es enthält nur die `README.md` und den Initial-Commit. Es gibt noch keinen Quellcode, kein Build-System und keine Tests.
+Runde 1 ist umgesetzt (Fächer mit Punkten eintragen und entfernen, Durchschnitt anzeigen). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System und noch keine Tests.
 
 ## Projektregeln
 
@@ -16,8 +16,10 @@ Das Repository ist noch ein Stub: Es enthält nur die `README.md` und den Initia
 
 ## Commands
 
-Noch keine definiert. Die App läuft ohne Installation direkt im Browser (`index.html` öffnen).
+Keine. `index.html` im Browser öffnen. Kein Node installiert, deshalb laufen Tests im Browser.
 
 ## Architecture
 
-Geplant: Oberfläche (`index.html`) und Rechenlogik (`rechner.js`) sind getrennt. Die Rechenlogik soll unabhängig von der Oberfläche testbar sein (später über `tests.html`).
+- `rechner.js` enthält nur die Rechenlogik und greift nie auf die Seite zu.
+- `index.html` nimmt die Eingaben entgegen, lässt sie von `rechner.js` prüfen und zeigt Liste und Durchschnitt an.
+- Später testet `tests.html` die Rechenlogik, ohne die Oberfläche zu brauchen.
