@@ -54,22 +54,25 @@ function formatiereSchnitt(wert) {
   return wert.toFixed(2).replace(".", ",");
 }
 
-// Prüft den Zielschnitt. Erlaubt sind Zahlen von 0 bis 15, auch mit Nachkommastellen.
+const BESTE_NOTE = 1;
+const SCHLECHTESTE_NOTE = 4;
+
+// Prüft die Zielnote. Erlaubt sind Noten von 1,0 bis 4,0, auch mit Nachkommastellen.
 // Ein leeres Feld bedeutet „kein Ziel“ und gibt { ok: true, wert: null } zurück.
-function pruefeZiel(eingabe) {
+function pruefeZielNote(eingabe) {
   const text = String(eingabe ?? "").trim();
   if (text === "") {
     return { ok: true, wert: null };
   }
   const zahl = Number(text.replace(",", "."));
   if (Number.isNaN(zahl)) {
-    return { ok: false, fehler: "Der Zielschnitt muss eine Zahl sein." };
+    return { ok: false, fehler: "Die Zielnote muss eine Zahl sein." };
   }
-  if (zahl < MIN_PUNKTE) {
-    return { ok: false, fehler: "Der Zielschnitt darf nicht unter 0 liegen." };
+  if (zahl < BESTE_NOTE) {
+    return { ok: false, fehler: "Die Zielnote darf nicht besser als 1,0 sein." };
   }
-  if (zahl > MAX_PUNKTE) {
-    return { ok: false, fehler: "Der Zielschnitt darf nicht über 15 liegen." };
+  if (zahl > SCHLECHTESTE_NOTE) {
+    return { ok: false, fehler: "Die Zielnote darf nicht schlechter als 4,0 sein." };
   }
   return { ok: true, wert: zahl };
 }
@@ -77,6 +80,11 @@ function pruefeZiel(eingabe) {
 // Rundet auf zwei Nachkommastellen, damit z. B. 12,00 und 12 als gleich gelten.
 function rundeAufHundertstel(wert) {
   return Math.round(wert * 100) / 100;
+}
+
+// Rechnet eine Note in einen Punkteschnitt um (Umkehrung der Abi-Formel), z. B. 1,6 → 12,2.
+function noteZuPunkten(note) {
+  return rundeAufHundertstel(17 - 3 * note);
 }
 
 // Vergleicht den Schnitt mit dem Ziel. Gibt null zurück, wenn einer der Werte fehlt.
@@ -108,7 +116,8 @@ if (typeof module !== "undefined") {
     pruefePunkte,
     durchschnitt,
     formatiereSchnitt,
-    pruefeZiel,
+    pruefeZielNote,
+    noteZuPunkten,
     vergleicheMitZiel,
     formatiereAbstand,
   };
