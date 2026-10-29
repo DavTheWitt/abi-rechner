@@ -106,7 +106,7 @@
   <p id="schnitt">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
 
   <label>
-    Zielschnitt (Punkte)
+    Zielschnitt (Note, z. B. 1,6)
     <input id="ziel" type="text" inputmode="decimal" autocomplete="off">
   </label>
   <p id="ziel-abstand" role="status"></p>
@@ -129,13 +129,21 @@
       zielFeld.classList.remove("unter-ziel", "ziel-erreicht");
       zielAbstand.classList.remove("unter-ziel", "ziel-erreicht");
 
-      const ziel = pruefeZiel(zielFeld.value);
+      const ziel = pruefeZielNote(zielFeld.value);
       if (!ziel.ok) {
         zielAbstand.textContent = ziel.fehler;
         return;
       }
-      const vergleich = vergleicheMitZiel(durchschnitt(faecher), ziel.wert);
-      zielAbstand.textContent = formatiereAbstand(vergleich);
+      if (ziel.wert === null) {
+        zielAbstand.textContent = "";
+        return;
+      }
+      const zielPunkte = noteZuPunkten(ziel.wert);
+      const umrechnung = `Note ${String(ziel.wert).replace(".", ",")} = ${formatiereSchnitt(zielPunkte)} Punkte`;
+      const vergleich = vergleicheMitZiel(durchschnitt(faecher), zielPunkte);
+      zielAbstand.textContent = vergleich === null
+        ? umrechnung
+        : `${umrechnung} · ${formatiereAbstand(vergleich)}`;
       if (vergleich !== null) {
         const klasse = vergleich.erreicht ? "ziel-erreicht" : "unter-ziel";
         zielFeld.classList.add(klasse);
