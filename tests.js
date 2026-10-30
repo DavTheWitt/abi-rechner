@@ -73,6 +73,62 @@ const TESTFAELLE = [
       erwarteGleich(ergebnis.wert, note);
     },
   })),
+  {
+    name: "Speichern und Laden ergibt dieselben Fächer und dieselbe Zielnote",
+    pruefe() {
+      const faecher = [
+        { name: "Mathe", punkte: 10 },
+        { name: "Deutsch", punkte: 13 },
+      ];
+      const zustand = rechner.ladeZustand(rechner.serialisiereZustand(faecher, "1,6"));
+      erwarteGleich(JSON.stringify(zustand.faecher), JSON.stringify(faecher));
+      erwarteGleich(zustand.ziel, "1,6");
+    },
+  },
+  ...[null, "", "{kaputt", "[]", "42", '{"faecher":"x"}'].map((gespeichert) => ({
+    name: `Gespeicherter Wert ${JSON.stringify(gespeichert)} ergibt einen leeren Zustand`,
+    pruefe() {
+      const zustand = rechner.ladeZustand(gespeichert);
+      erwarteGleich(zustand.faecher.length, 0);
+      erwarteGleich(zustand.ziel, "");
+    },
+  })),
+  {
+    name: "Ungültige gespeicherte Fächer werden verworfen, gültige bleiben",
+    pruefe() {
+      const gespeichert = JSON.stringify({
+        faecher: [
+          { name: "Mathe", punkte: 12 },
+          { name: "Deutsch", punkte: 16 },
+          { name: "  ", punkte: 5 },
+          { name: "Kunst", punkte: "7" },
+          null,
+          { name: "Sport", punkte: 7 },
+        ],
+        ziel: "2,0",
+      });
+      const zustand = rechner.ladeZustand(gespeichert);
+      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe,Sport");
+      erwarteGleich(zustand.ziel, "2,0");
+    },
+  },
+  ...["5,0", "abc"].map((zielNote) => ({
+    name: `Gespeicherte Zielnote ${JSON.stringify(zielNote)} wird verworfen, gültige Fächer bleiben`,
+    pruefe() {
+      const gespeichert = rechner.serialisiereZustand([{ name: "Mathe", punkte: 12 }], zielNote);
+      const zustand = rechner.ladeZustand(gespeichert);
+      erwarteGleich(zustand.ziel, "");
+      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe");
+    },
+  })),
+  {
+    name: "Leerer Zustand bleibt nach Speichern und Laden leer",
+    pruefe() {
+      const zustand = rechner.ladeZustand(rechner.serialisiereZustand([], ""));
+      erwarteGleich(zustand.faecher.length, 0);
+      erwarteGleich(zustand.ziel, "");
+    },
+  },
 ];
 
 // Führt alle Testfälle aus. Gibt [{ name, bestanden, meldung }] zurück.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Runde 2 ist umgesetzt (Abi Zielschnitt und Umrechnung von Zielnote in Punkte). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
+Runde 3 ist umgesetzt (Speichern im localStorage und Zurücksetzen). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
 
 ## Projektregeln
 
