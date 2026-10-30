@@ -57,6 +57,14 @@ const TESTFAELLE = [
       erwarteGleich(rechner.pruefeZielNote(eingabe).ok, false);
     },
   })),
+  {
+    name: "Zielnote 4,1 wird abgelehnt",
+    pruefe() {
+      const ergebnis = rechner.pruefeZielNote("4,1");
+      erwarteGleich(ergebnis.ok, false);
+      erwarteGleich(ergebnis.fehler, "Schlechter als 4,0 bedeutet: Abitur nicht bestanden.");
+    },
+  },
   ...[["1,0", 1], ["4,0", 4]].map(([eingabe, note]) => ({
     name: `Zielnote ${eingabe} wird angenommen`,
     pruefe() {
