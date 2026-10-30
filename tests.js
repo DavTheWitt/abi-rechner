@@ -112,6 +112,15 @@ const TESTFAELLE = [
       erwarteGleich(zustand.ziel, "2,0");
     },
   },
+  ...["5,0", "abc"].map((zielNote) => ({
+    name: `Gespeicherte Zielnote ${JSON.stringify(zielNote)} wird verworfen, gültige Fächer bleiben`,
+    pruefe() {
+      const gespeichert = rechner.serialisiereZustand([{ name: "Mathe", punkte: 12 }], zielNote);
+      const zustand = rechner.ladeZustand(gespeichert);
+      erwarteGleich(zustand.ziel, "");
+      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe");
+    },
+  })),
   {
     name: "Leerer Zustand bleibt nach Speichern und Laden leer",
     pruefe() {

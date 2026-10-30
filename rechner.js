@@ -117,7 +117,7 @@ function serialisiereZustand(faecher, zielText) {
 }
 
 // Liest den gespeicherten String. Bei fehlenden oder kaputten Daten kommt ein leerer Zustand zurück,
-// ungültige Fächer werden verworfen. Gibt immer { faecher, ziel } zurück.
+// ungültige Fächer und eine ungültige Zielnote werden verworfen. Gibt immer { faecher, ziel } zurück.
 function ladeZustand(text) {
   const leer = { faecher: [], ziel: "" };
   let daten;
@@ -140,7 +140,8 @@ function ladeZustand(text) {
       faecher.push({ name: name.wert, punkte: punkte.wert });
     }
   }
-  return { faecher, ziel: typeof daten.ziel === "string" ? daten.ziel : "" };
+  const ziel = typeof daten.ziel === "string" && pruefeZielNote(daten.ziel).ok ? daten.ziel : "";
+  return { faecher, ziel };
 }
 
 // Für Tests außerhalb des Browsers (z. B. mit Node).
