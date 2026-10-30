@@ -109,6 +109,40 @@ function formatiereAbstand(vergleich) {
   return vergleich.abstand < 0 ? `${betrag} Punkte unter Ziel` : `${betrag} Punkte über Ziel`;
 }
 
+const SPEICHER_SCHLUESSEL = "abi-rechner";
+
+// Macht aus Fächern und Zielnote-Text den String, der im localStorage liegt.
+function serialisiereZustand(faecher, zielText) {
+  return JSON.stringify({ faecher, ziel: zielText });
+}
+
+// Liest den gespeicherten String. Bei fehlenden oder kaputten Daten kommt ein leerer Zustand zurück,
+// ungültige Fächer werden verworfen. Gibt immer { faecher, ziel } zurück.
+function ladeZustand(text) {
+  const leer = { faecher: [], ziel: "" };
+  let daten;
+  try {
+    daten = JSON.parse(text);
+  } catch {
+    return leer;
+  }
+  if (daten === null || typeof daten !== "object" || !Array.isArray(daten.faecher)) {
+    return leer;
+  }
+  const faecher = [];
+  for (const eintrag of daten.faecher) {
+    if (eintrag === null || typeof eintrag !== "object" || typeof eintrag.punkte !== "number") {
+      continue;
+    }
+    const name = pruefeName(eintrag.name);
+    const punkte = pruefePunkte(eintrag.punkte);
+    if (name.ok && punkte.ok) {
+      faecher.push({ name: name.wert, punkte: punkte.wert });
+    }
+  }
+  return { faecher, ziel: typeof daten.ziel === "string" ? daten.ziel : "" };
+}
+
 // Für Tests außerhalb des Browsers (z. B. mit Node).
 if (typeof module !== "undefined") {
   module.exports = {
@@ -120,5 +154,7 @@ if (typeof module !== "undefined") {
     noteZuPunkten,
     vergleicheMitZiel,
     formatiereAbstand,
+    serialisiereZustand,
+    ladeZustand,
   };
 }

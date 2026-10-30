@@ -111,6 +111,8 @@
   </label>
   <p id="ziel-abstand" role="status"></p>
 
+  <button id="zuruecksetzen" type="button">Zurücksetzen</button>
+
   <script src="rechner.js"></script>
   <script>
     const faecher = [];
@@ -124,6 +126,22 @@
     const schnittWert = document.getElementById("schnitt-wert");
     const zielFeld = document.getElementById("ziel");
     const zielAbstand = document.getElementById("ziel-abstand");
+    const zuruecksetzenKnopf = document.getElementById("zuruecksetzen");
+
+    // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
+    function speichere() {
+      try {
+        localStorage.setItem(SPEICHER_SCHLUESSEL, serialisiereZustand(faecher, zielFeld.value));
+      } catch {}
+    }
+
+    function ladeGespeichertes() {
+      try {
+        const zustand = ladeZustand(localStorage.getItem(SPEICHER_SCHLUESSEL));
+        faecher.push(...zustand.faecher);
+        zielFeld.value = zustand.ziel;
+      } catch {}
+    }
 
     function zeigeZiel() {
       zielFeld.classList.remove("unter-ziel", "ziel-erreicht");
@@ -179,9 +197,26 @@
       leerHinweis.hidden = faecher.length > 0;
       schnittWert.textContent = formatiereSchnitt(durchschnitt(faecher));
       zeigeZiel();
+      speichere();
     }
 
-    zielFeld.addEventListener("input", zeigeZiel);
+    zielFeld.addEventListener("input", () => {
+      zeigeZiel();
+      speichere();
+    });
+
+    zuruecksetzenKnopf.addEventListener("click", () => {
+      if (!confirm("Alle Fächer und die Zielnote löschen?")) {
+        return;
+      }
+      faecher.length = 0;
+      zielFeld.value = "";
+      fehlerAnzeige.textContent = "";
+      try {
+        localStorage.removeItem(SPEICHER_SCHLUESSEL);
+      } catch {}
+      zeichne();
+    });
 
     formular.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -206,6 +241,7 @@
       zeichne();
     });
 
+    ladeGespeichertes();
     zeichne();
   </script>
 </body>
