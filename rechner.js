@@ -72,7 +72,7 @@ function pruefeZielNote(eingabe) {
     return { ok: false, fehler: "Die Zielnote darf nicht besser als 1,0 sein." };
   }
   if (zahl > SCHLECHTESTE_NOTE) {
-    return { ok: false, fehler: "Die Zielnote darf nicht schlechter als 4,0 sein." };
+    return { ok: false, fehler: "Schlechter als 4,0 bedeutet: Abitur nicht bestanden." };
   }
   return { ok: true, wert: zahl };
 }
