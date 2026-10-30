@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Runde 2 ist umgesetzt (Abi Zielschnitt und Umrechnung von Zielnote in Punkte). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System und noch keine Tests, die stehen als nächstes an 
+Runde 2 ist umgesetzt (Abi Zielschnitt und Umrechnung von Zielnote in Punkte). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
 
 ## Projektregeln
 
@@ -17,10 +17,10 @@ Runde 2 ist umgesetzt (Abi Zielschnitt und Umrechnung von Zielnote in Punkte). D
 
 ## Commands
 
-`index.html` im Browser öffnen. Tests: folgen
+`index.html` im Browser öffnen. Tests: `node tests.js` oder `tests.html` im Browser öffnen.
 
 ## Architecture
 
 - `rechner.js` enthält nur die Rechenlogik und greift nie auf die Seite zu.
 - `index.html` nimmt die Eingaben entgegen, lässt sie von `rechner.js` prüfen und zeigt Liste und Durchschnitt an.
-- Später testet `tests.html` die Rechenlogik, ohne die Oberfläche zu brauchen.
+- `tests.js` enthält alle Testfälle einmal; `tests.html` zeigt sie im Browser an, `node tests.js` in der Konsole.

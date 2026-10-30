@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Abi-Rechner Tests</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 40rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      color: #222;
+    }
+    #zusammenfassung {
+      font-size: 1.3rem;
+      font-weight: bold;
+      padding: 0.5rem 0.8rem;
+      border: 2px solid;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #ddd;
+    }
+    .bestanden {
+      color: #2e7d32;
+    }
+    .fehlgeschlagen {
+      color: #c62828;
+    }
+    .meldung {
+      display: block;
+      font-size: 0.9rem;
+      margin-left: 1.3rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Tests für rechner.js</h1>
+  <p id="zusammenfassung"></p>
+  <ul id="liste"></ul>
+
+  <script src="rechner.js"></script>
+  <script src="tests.js"></script>
+  <script>
+    const ergebnisse = fuehreTestsAus();
+    const anzahlBestanden = ergebnisse.filter((ergebnis) => ergebnis.bestanden).length;
+
+    const zusammenfassung = document.getElementById("zusammenfassung");
+    zusammenfassung.textContent = `${anzahlBestanden} von ${ergebnisse.length} bestanden`;
+    zusammenfassung.className = anzahlBestanden === ergebnisse.length ? "bestanden" : "fehlgeschlagen";
+
+    const liste = document.getElementById("liste");
+    for (const ergebnis of ergebnisse) {
+      const eintrag = document.createElement("li");
+      eintrag.className = ergebnis.bestanden ? "bestanden" : "fehlgeschlagen";
+      eintrag.textContent = `${ergebnis.bestanden ? "✓" : "✗"} ${ergebnis.name}`;
+      if (!ergebnis.bestanden) {
+        const meldung = document.createElement("span");
+        meldung.className = "meldung";
+        meldung.textContent = ergebnis.meldung;
+        eintrag.appendChild(meldung);
+      }
+      liste.appendChild(eintrag);
+    }
+  </script>
+</body>
+</html>
