@@ -152,7 +152,7 @@ function ladeZustand(text) {
     }
     const name = pruefeName(eintrag.name);
     const punkte = pruefePunkte(eintrag.punkte);
-    if (name.ok && punkte.ok) {
+    if (name.ok && punkte.ok && !istDoppelt(faecher, name.wert)) {
       faecher.push({ name: name.wert, punkte: punkte.wert });
     }
   }
