@@ -5,78 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Abi-Rechner</title>
   <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 40rem;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      color: #222;
-    }
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: flex-end;
-    }
-    label {
-      display: flex;
-      flex-direction: column;
-      font-size: 0.9rem;
-    }
-    input {
-      font-size: 1rem;
-      padding: 0.3rem;
-    }
-    #punkte {
-      width: 5rem;
-    }
-    button {
-      font-size: 1rem;
-      padding: 0.3rem 0.8rem;
-      cursor: pointer;
-    }
-    #fehler {
-      color: #b00020;
-      min-height: 1.5em;
-      margin: 0.5rem 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th, td {
-      text-align: left;
-      padding: 0.4rem;
-      border-bottom: 1px solid #ddd;
-    }
-    #schnitt {
-      font-size: 1.5rem;
-      margin-top: 1.5rem;
-    }
-    #ziel {
-      width: 5rem;
-      border: 3px solid #999;
-    }
-    #ziel.unter-ziel {
-      background: #ffcdd2;
-      border-color: #c62828;
-    }
-    #ziel.ziel-erreicht {
-      background: #c8e6c9;
-      border-color: #2e7d32;
-    }
-    #ziel-abstand {
-      font-size: 1.2rem;
-      min-height: 1.5em;
-    }
-    #ziel-abstand.unter-ziel {
-      color: #c62828;
-      font-weight: bold;
-    }
-    #ziel-abstand.ziel-erreicht {
-      color: #2e7d32;
-      font-weight: bold;
-    }
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    form { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; }
+    label { display: flex; flex-direction: column; font-size: 0.9rem; }
+    input { font-size: 1rem; padding: 0.3rem; }
+    button { font-size: 1rem; padding: 0.3rem 0.8rem; cursor: pointer; }
+    #fehler { color: #b00020; min-height: 1.5em; margin: 0.5rem 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #ddd; }
+    #schnitt { font-size: 1.5rem; margin-top: 1.5rem; }
+    #punkte, #ziel { width: 5rem; }
+    #ziel { border: 3px solid #999; }
+    #ziel.unter-ziel { background: #ffcdd2; border-color: #c62828; }
+    #ziel.ziel-erreicht { background: #c8e6c9; border-color: #2e7d32; }
+    #ziel-abstand { font-size: 1.2rem; min-height: 1.5em; }
+    #ziel-abstand.unter-ziel { color: #c62828; font-weight: bold; }
+    #ziel-abstand.ziel-erreicht { color: #2e7d32; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -103,7 +47,7 @@
   </table>
   <p id="leer-hinweis">Noch keine Fächer eingetragen.</p>
 
-  <p id="schnitt">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
+  <p id="schnitt" role="status">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
 
   <label>
     Zielschnitt (Note, z. B. 1,6)
@@ -116,127 +60,60 @@
   <script src="rechner.js"></script>
   <script>
     const faecher = [];
-
     const formular = document.getElementById("fach-formular");
     const nameFeld = document.getElementById("name");
     const punkteFeld = document.getElementById("punkte");
     const fehlerAnzeige = document.getElementById("fehler");
     const liste = document.getElementById("liste");
-    const leerHinweis = document.getElementById("leer-hinweis");
-    const schnittWert = document.getElementById("schnitt-wert");
     const zielFeld = document.getElementById("ziel");
     const zielAbstand = document.getElementById("ziel-abstand");
-    const zuruecksetzenKnopf = document.getElementById("zuruecksetzen");
 
-    // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
-    function speichere() {
-      try {
-        localStorage.setItem(SPEICHER_SCHLUESSEL, serialisiereZustand(faecher, zielFeld.value));
-      } catch {}
-    }
-
-    function ladeGespeichertes() {
-      try {
-        const zustand = ladeZustand(localStorage.getItem(SPEICHER_SCHLUESSEL));
-        faecher.push(...zustand.faecher);
-        zielFeld.value = zustand.ziel;
-      } catch {}
-    }
-
-    function zeigeZiel() {
-      zielFeld.classList.remove("unter-ziel", "ziel-erreicht");
-      zielAbstand.classList.remove("unter-ziel", "ziel-erreicht");
-
-      const ziel = pruefeZielNote(zielFeld.value);
-      if (!ziel.ok) {
-        zielAbstand.textContent = ziel.fehler;
-        return;
-      }
-      if (ziel.wert === null) {
-        zielAbstand.textContent = "";
-        return;
-      }
-      const zielPunkte = noteZuPunkten(ziel.wert);
-      const umrechnung = `Note ${String(ziel.wert).replace(".", ",")} = ${formatiereSchnitt(zielPunkte)} Punkte`;
-      const vergleich = vergleicheMitZiel(durchschnitt(faecher), zielPunkte);
-      zielAbstand.textContent = vergleich === null
-        ? umrechnung
-        : `${umrechnung} · ${formatiereAbstand(vergleich)}`;
-      if (vergleich !== null) {
-        const klasse = vergleich.erreicht ? "ziel-erreicht" : "unter-ziel";
-        zielFeld.classList.add(klasse);
-        zielAbstand.classList.add(klasse);
-      }
-    }
-
+    // Zeigt den ganzen Zustand neu an und speichert ihn.
     function zeichne() {
       liste.replaceChildren();
       faecher.forEach((fach, index) => {
-        const zeile = document.createElement("tr");
-
-        const nameZelle = document.createElement("td");
-        nameZelle.textContent = fach.name;
-
-        const punkteZelle = document.createElement("td");
-        punkteZelle.textContent = fach.punkte;
-
-        const knopfZelle = document.createElement("td");
-        const entfernen = document.createElement("button");
-        entfernen.type = "button";
+        const zeile = liste.insertRow();
+        zeile.insertCell().textContent = fach.name;
+        zeile.insertCell().textContent = fach.punkte;
+        const entfernen = zeile.insertCell().appendChild(document.createElement("button"));
         entfernen.textContent = "Entfernen";
         entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
-        entfernen.addEventListener("click", () => {
+        entfernen.onclick = (event) => {
+          if (event.detail > 1) return; // Doppelklick: der zweite Klick träfe sonst schon das nächste Fach
           faecher.splice(index, 1);
           zeichne();
-        });
-        knopfZelle.appendChild(entfernen);
-
-        zeile.append(nameZelle, punkteZelle, knopfZelle);
-        liste.appendChild(zeile);
+          // Fokus auf den Knopf, der jetzt an dieser Stelle steht; sonst springt er an den Seitenanfang.
+          (liste.rows[Math.min(index, faecher.length - 1)]?.querySelector("button") ?? nameFeld).focus();
+        };
       });
+      document.getElementById("leer-hinweis").hidden = faecher.length > 0;
 
-      leerHinweis.hidden = faecher.length > 0;
-      schnittWert.textContent = formatiereSchnitt(durchschnitt(faecher));
-      zeigeZiel();
-      speichere();
+      const schnitt = durchschnitt(faecher);
+      const schnittWert = document.getElementById("schnitt-wert");
+      // Nur bei Änderung setzen: #schnitt wird vorgelesen und soll das nicht bei jedem Tastendruck im Zielfeld tun.
+      if (schnittWert.textContent !== formatiereSchnitt(schnitt)) schnittWert.textContent = formatiereSchnitt(schnitt);
+      const ziel = zielStatus(schnitt, zielFeld.value);
+      zielAbstand.textContent = ziel.text;
+      let klasse = "";
+      if (ziel.erreicht !== null) klasse = ziel.erreicht ? "ziel-erreicht" : "unter-ziel";
+      zielFeld.className = zielAbstand.className = klasse;
+
+      // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
+      try {
+        localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify({ faecher, ziel: zielFeld.value }));
+      } catch {}
     }
-
-    zielFeld.addEventListener("input", () => {
-      zeigeZiel();
-      speichere();
-    });
-
-    zuruecksetzenKnopf.addEventListener("click", () => {
-      if (!confirm("Alle Fächer und die Zielnote löschen?")) {
-        return;
-      }
-      faecher.length = 0;
-      zielFeld.value = "";
-      fehlerAnzeige.textContent = "";
-      zeichne();
-    });
 
     formular.addEventListener("submit", (event) => {
       event.preventDefault();
-
-      const name = pruefeName(nameFeld.value);
-      if (!name.ok) {
-        fehlerAnzeige.textContent = name.fehler;
-        nameFeld.focus();
-        return;
-      }
-      if (istDoppelt(faecher, name.wert)) {
-        fehlerAnzeige.textContent = "Dieses Fach gibt es schon.";
-        nameFeld.focus();
-        return;
-      }
+      const name = pruefeName(nameFeld.value, faecher);
       const punkte = pruefePunkte(punkteFeld.value);
-      if (!punkte.ok) {
-        fehlerAnzeige.textContent = punkte.fehler;
-        punkteFeld.focus();
+      if (!name.ok || !punkte.ok) {
+        // Zuerst den Fehler beim Namen zeigen, sonst den bei den Punkten.
+        fehlerAnzeige.textContent = name.ok ? punkte.fehler : name.fehler;
+        (name.ok ? punkteFeld : nameFeld).focus();
         return;
       }
-
       faecher.push({ name: name.wert, punkte: punkte.wert });
       fehlerAnzeige.textContent = "";
       formular.reset();
@@ -244,7 +121,22 @@
       zeichne();
     });
 
-    ladeGespeichertes();
+    zielFeld.addEventListener("input", zeichne);
+
+    document.getElementById("zuruecksetzen").addEventListener("click", () => {
+      if (!confirm("Alle Fächer und die Zielnote löschen?")) return;
+      faecher.length = 0;
+      formular.reset();
+      zielFeld.value = "";
+      fehlerAnzeige.textContent = "";
+      zeichne();
+    });
+
+    try {
+      const zustand = ladeZustand(localStorage.getItem(SPEICHER_SCHLUESSEL));
+      faecher.push(...zustand.faecher);
+      zielFeld.value = zustand.ziel;
+    } catch {}
     zeichne();
   </script>
 </body>

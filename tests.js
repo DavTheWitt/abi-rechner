@@ -1,287 +1,87 @@
-// Testfälle für rechner.js.
-// Laufen im Browser über tests.html und mit Node über „node tests.js“.
+// Testfälle für rechner.js. Laufen im Browser über tests.html und mit Node über „node tests.js“.
 
 // In Node kommt die Rechenlogik über require, im Browser aus dem vorher geladenen rechner.js.
 const rechner = typeof require === "function" ? require("./rechner.js") : globalThis;
 
-// Wirft einen Fehler, wenn ist und soll nicht gleich sind.
-function erwarteGleich(ist, soll) {
-  if (ist !== soll) {
-    throw new Error(`erwartet ${JSON.stringify(soll)}, bekommen ${JSON.stringify(ist)}`);
-  }
-}
+const fach = (name, punkte) => ({ name, punkte });
+const gespeichert = (faecher, ziel) => JSON.stringify({ faecher, ziel });
+const wertOderFehler = (pruefung) => (pruefung.ok ? pruefung.wert : pruefung.fehler);
+
+// Macht aus [Eingabe, Erwartung]-Paaren Testfälle der Form [Name, Funktion, Erwartung].
+const faelle = (titel, funktion, paare) =>
+  paare.map(([eingabe, soll]) => [`${titel} ${JSON.stringify(eingabe)} → ${JSON.stringify(soll)}`, () => funktion(eingabe), soll]);
 
 const TESTFAELLE = [
-  {
-    name: "Mathe 10, Deutsch 12, Englisch 14 ergibt 12,00",
-    pruefe() {
-      const faecher = [
-        { name: "Mathe", punkte: 10 },
-        { name: "Deutsch", punkte: 12 },
-        { name: "Englisch", punkte: 14 },
-      ];
-      erwarteGleich(rechner.formatiereSchnitt(rechner.durchschnitt(faecher)), "12,00");
-    },
-  },
-  ...[
-    ["16", "Punkte dürfen nicht über 15 liegen."],
-    ["-1", "Punkte dürfen nicht unter 0 liegen."],
-    ["", "Bitte Punkte eingeben."],
+  ["Mathe 10, Deutsch 12, Englisch 14 ergibt 12,00",
+    () => rechner.formatiereSchnitt(rechner.durchschnitt([fach("Mathe", 10), fach("Deutsch", 12), fach("Englisch", 14)])), "12,00"],
+  ["Leere Liste ergibt den Strich", () => rechner.formatiereSchnitt(rechner.durchschnitt([])), "–"],
+
+  ...faelle("Punkte", (eingabe) => wertOderFehler(rechner.pruefePunkte(eingabe)), [
+    ...["16", "15,5"].map((eingabe) => [eingabe, "Punkte dürfen nicht über 15 liegen."]),
+    ...["-1", "-0,5"].map((eingabe) => [eingabe, "Punkte dürfen nicht unter 0 liegen."]),
     ["7,5", "Punkte müssen eine ganze Zahl sein."],
-    ["abc", "Punkte müssen eine Zahl sein."],
-    [null, "Bitte Punkte eingeben."],
-    [undefined, "Bitte Punkte eingeben."],
-  ].map(([eingabe, fehler]) => ({
-    name: `Punkte ${JSON.stringify(eingabe)} werden mit passender Meldung abgelehnt`,
-    pruefe() {
-      const ergebnis = rechner.pruefePunkte(eingabe);
-      erwarteGleich(ergebnis.ok, false);
-      erwarteGleich(ergebnis.fehler, fehler);
-    },
-  })),
-  ...["0x0A", "1e1", "0b11", "Infinity"].flatMap((eingabe) => [
-    {
-      name: `Punkte ${JSON.stringify(eingabe)} werden als keine Zahl abgelehnt`,
-      pruefe() {
-        erwarteGleich(rechner.pruefePunkte(eingabe).fehler, "Punkte müssen eine Zahl sein.");
-      },
-    },
-    {
-      name: `Zielnote ${JSON.stringify(eingabe)} wird als keine Zahl abgelehnt`,
-      pruefe() {
-        erwarteGleich(rechner.pruefeZielNote(eingabe).fehler, "Die Zielnote muss eine Zahl sein.");
-      },
-    },
+    ...["", null, undefined].map((eingabe) => [eingabe, "Bitte Punkte eingeben."]),
+    ...["abc", "0x0A", "1e1", "0b11", "Infinity"].map((eingabe) => [eingabe, "Punkte müssen eine Zahl sein."]),
+    ["0", 0], ["-0", 0], ["15", 15], [12, 12], ["12,0", 12], [" 12 ", 12], ["12.0", 12], ["12,", 12],
   ]),
-  ...[["12,0", 12], [" 12 ", 12], ["12.0", 12]].map(([eingabe, punkte]) => ({
-    name: `Punkte ${JSON.stringify(eingabe)} werden als ${punkte} angenommen`,
-    pruefe() {
-      erwarteGleich(rechner.pruefePunkte(eingabe).wert, punkte);
-    },
-  })),
-  ...[["", "Bitte einen Fachnamen eingeben."], ["   ", "Bitte einen Fachnamen eingeben."], [null, "Bitte einen Fachnamen eingeben."], [undefined, "Bitte einen Fachnamen eingeben."]].map(
-    ([eingabe, fehler]) => ({
-      name: `Fachname ${JSON.stringify(eingabe)} wird abgelehnt`,
-      pruefe() {
-        const ergebnis = rechner.pruefeName(eingabe);
-        erwarteGleich(ergebnis.ok, false);
-        erwarteGleich(ergebnis.fehler, fehler);
-      },
-    })
-  ),
-  {
-    name: "Fachname wird getrimmt",
-    pruefe() {
-      const ergebnis = rechner.pruefeName("  Mathe ");
-      erwarteGleich(ergebnis.ok, true);
-      erwarteGleich(ergebnis.wert, "Mathe");
-    },
-  },
-  {
-    name: "Doppelte Fächer werden erkannt, auch bei anderer Schreibweise",
-    pruefe() {
-      const faecher = [{ name: "Mathe", punkte: 10 }];
-      erwarteGleich(rechner.istDoppelt(faecher, "Mathe"), true);
-      erwarteGleich(rechner.istDoppelt(faecher, "mathe"), true);
-      erwarteGleich(rechner.istDoppelt(faecher, "Deutsch"), false);
-      erwarteGleich(rechner.istDoppelt([], "Mathe"), false);
-      erwarteGleich(rechner.istDoppelt(faecher, " Mathe "), true);
-      erwarteGleich(rechner.istDoppelt(faecher, "Mathe 2"), false);
-      erwarteGleich(rechner.istDoppelt([{ name: "Ökologie", punkte: 5 }], "ökologie"), true);
-      const mehrere = [{ name: "Deutsch", punkte: 12 }, { name: "Kunst", punkte: 9 }];
-      erwarteGleich(rechner.istDoppelt(mehrere, "Kunst"), true);
-    },
-  },
-  {
-    name: "Doppelte gespeicherte Fächer werden beim Laden verworfen, das erste bleibt",
-    pruefe() {
-      const faecher = [
-        { name: "Mathe", punkte: 12 },
-        { name: "mathe", punkte: 5 },
-        { name: "Deutsch", punkte: 10 },
-      ];
-      const zustand = rechner.ladeZustand(rechner.serialisiereZustand(faecher, ""));
-      erwarteGleich(zustand.faecher.map((fach) => `${fach.name}:${fach.punkte}`).join(","), "Mathe:12,Deutsch:10");
-    },
-  },
-  {
-    name: "Leere Liste ergibt keinen Durchschnitt und den Strich als Text",
-    pruefe() {
-      erwarteGleich(rechner.durchschnitt([]), null);
-      erwarteGleich(rechner.formatiereSchnitt(null), "–");
-    },
-  },
-  {
-    name: "Leeres Zielnote-Feld bedeutet kein Ziel",
-    pruefe() {
-      const ergebnis = rechner.pruefeZielNote("");
-      erwarteGleich(ergebnis.ok, true);
-      erwarteGleich(ergebnis.wert, null);
-    },
-  },
-  {
-    name: "Zielnote 1.5 mit Punkt wird angenommen, abc abgelehnt",
-    pruefe() {
-      erwarteGleich(rechner.pruefeZielNote("1.5").wert, 1.5);
-      erwarteGleich(rechner.pruefeZielNote("abc").ok, false);
-    },
-  },
-  {
-    name: "noteZuPunkten rechnet 1,0 zu 14 und 4,0 zu 5 um",
-    pruefe() {
-      erwarteGleich(rechner.noteZuPunkten(1), 14);
-      erwarteGleich(rechner.noteZuPunkten(4), 5);
-      erwarteGleich(rechner.noteZuPunkten(1.6), 12.2);
-    },
-  },
-  {
-    name: "Vergleich mit Ziel: unter Ziel, genau erreicht, fehlende Werte",
-    pruefe() {
-      const unter = rechner.vergleicheMitZiel(11, 12);
-      erwarteGleich(unter.erreicht, false);
-      erwarteGleich(rechner.formatiereAbstand(unter), "1,00 Punkte unter Ziel");
-      const genau = rechner.vergleicheMitZiel(12.2, rechner.noteZuPunkten(1.6));
-      erwarteGleich(genau.erreicht, true);
-      erwarteGleich(rechner.formatiereAbstand(genau), "Ziel genau erreicht");
-      erwarteGleich(rechner.vergleicheMitZiel(null, 12), null);
-      erwarteGleich(rechner.vergleicheMitZiel(12, null), null);
-      erwarteGleich(rechner.formatiereAbstand(null), "");
-    },
-  },
-  ...[0, 15].map((punkte) => ({
-    name: `Punkte ${punkte} werden angenommen`,
-    pruefe() {
-      const ergebnis = rechner.pruefePunkte(String(punkte));
-      erwarteGleich(ergebnis.ok, true);
-      erwarteGleich(ergebnis.wert, punkte);
-    },
-  })),
-  {
-    name: "Fächer 12 und 13 mit Zielnote 1,6 ergeben 0,30 Punkte über Ziel",
-    pruefe() {
-      const faecher = [
-        { name: "Mathe", punkte: 12 },
-        { name: "Deutsch", punkte: 13 },
-      ];
-      const zielNote = rechner.pruefeZielNote("1,6");
-      erwarteGleich(zielNote.ok, true);
-      const ziel = rechner.noteZuPunkten(zielNote.wert);
-      const vergleich = rechner.vergleicheMitZiel(rechner.durchschnitt(faecher), ziel);
-      erwarteGleich(rechner.formatiereAbstand(vergleich), "0,30 Punkte über Ziel");
-    },
-  },
-  ...["0,5", "7"].map((eingabe) => ({
-    name: `Zielnote ${eingabe} wird abgelehnt`,
-    pruefe() {
-      erwarteGleich(rechner.pruefeZielNote(eingabe).ok, false);
-    },
-  })),
-  {
-    name: "Zielnote 4,1 wird abgelehnt",
-    pruefe() {
-      const ergebnis = rechner.pruefeZielNote("4,1");
-      erwarteGleich(ergebnis.ok, false);
-      erwarteGleich(ergebnis.fehler, "Schlechter als 4,0 bedeutet: Abitur nicht bestanden.");
-    },
-  },
-  ...[["1,0", 1], ["4,0", 4]].map(([eingabe, note]) => ({
-    name: `Zielnote ${eingabe} wird angenommen`,
-    pruefe() {
-      const ergebnis = rechner.pruefeZielNote(eingabe);
-      erwarteGleich(ergebnis.ok, true);
-      erwarteGleich(ergebnis.wert, note);
-    },
-  })),
-  {
-    name: "Speichern und Laden ergibt dieselben Fächer und dieselbe Zielnote",
-    pruefe() {
-      const faecher = [
-        { name: "Mathe", punkte: 10 },
-        { name: "Deutsch", punkte: 13 },
-      ];
-      const zustand = rechner.ladeZustand(rechner.serialisiereZustand(faecher, "1,6"));
-      erwarteGleich(JSON.stringify(zustand.faecher), JSON.stringify(faecher));
-      erwarteGleich(zustand.ziel, "1,6");
-    },
-  },
-  ...[null, "", "{kaputt", "[]", "42", '{"faecher":"x"}'].map((gespeichert) => ({
-    name: `Gespeicherter Wert ${JSON.stringify(gespeichert)} ergibt einen leeren Zustand`,
-    pruefe() {
-      const zustand = rechner.ladeZustand(gespeichert);
-      erwarteGleich(zustand.faecher.length, 0);
-      erwarteGleich(zustand.ziel, "");
-    },
-  })),
-  {
-    name: "Ungültige gespeicherte Fächer werden verworfen, gültige bleiben",
-    pruefe() {
-      const gespeichert = JSON.stringify({
-        faecher: [
-          { name: "Mathe", punkte: 12 },
-          { name: "Deutsch", punkte: 16 },
-          { name: "  ", punkte: 5 },
-          { name: "Kunst", punkte: "7" },
-          null,
-          { name: "Sport", punkte: 7 },
-        ],
-        ziel: "2,0",
-      });
-      const zustand = rechner.ladeZustand(gespeichert);
-      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe,Sport");
-      erwarteGleich(zustand.ziel, "2,0");
-    },
-  },
-  {
-    name: "Gespeicherte Fächer mit Name als Zahl, Objekt oder Array werden verworfen",
-    pruefe() {
-      const gespeichert = JSON.stringify({
-        faecher: [
-          { name: 123, punkte: 5 },
-          { name: {}, punkte: 5 },
-          { name: ["a"], punkte: 5 },
-          { punkte: 5 },
-          { name: "Mathe", punkte: 12 },
-        ],
-        ziel: "",
-      });
-      const zustand = rechner.ladeZustand(gespeichert);
-      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe");
-    },
-  },
-  ...[7.5, -1].map((punkte) => ({
-    name: `Gespeicherte Punkte ${punkte} werden verworfen`,
-    pruefe() {
-      const gespeichert = rechner.serialisiereZustand([{ name: "Mathe", punkte }], "");
-      erwarteGleich(rechner.ladeZustand(gespeichert).faecher.length, 0);
-    },
-  })),
-  ...["5,0", "abc"].map((zielNote) => ({
-    name: `Gespeicherte Zielnote ${JSON.stringify(zielNote)} wird verworfen, gültige Fächer bleiben`,
-    pruefe() {
-      const gespeichert = rechner.serialisiereZustand([{ name: "Mathe", punkte: 12 }], zielNote);
-      const zustand = rechner.ladeZustand(gespeichert);
-      erwarteGleich(zustand.ziel, "");
-      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe");
-    },
-  })),
-  {
-    name: "Leerer Zustand bleibt nach Speichern und Laden leer",
-    pruefe() {
-      const zustand = rechner.ladeZustand(rechner.serialisiereZustand([], ""));
-      erwarteGleich(zustand.faecher.length, 0);
-      erwarteGleich(zustand.ziel, "");
-    },
-  },
+
+  ...faelle("Fachname", (eingabe) => wertOderFehler(rechner.pruefeName(eingabe)), [
+    ...["", "   ", null, undefined].map((eingabe) => [eingabe, "Bitte einen Fachnamen eingeben."]),
+    ["  Mathe ", "Mathe"],
+  ]),
+  ...faelle("Neben Mathe, Ökologie und Kunst: Fach",
+    (eingabe) => wertOderFehler(rechner.pruefeName(eingabe, [fach("Mathe", 10), fach("Ökologie", 5), fach("Kunst", 9)])), [
+      ...["Mathe", "mathe", " Mathe ", "ökologie", "Kunst"].map((eingabe) => [eingabe, "Dieses Fach gibt es schon."]),
+      ["Mathe 2", "Mathe 2"], ["Deutsch", "Deutsch"],
+    ]),
+
+  ...faelle("Zielnote", (eingabe) => wertOderFehler(rechner.pruefeZielNote(eingabe)), [
+    ["", null], ["1,0", 1], ["1,", 1], ["1.5", 1.5], [" 2 ", 2], ["4,0", 4],
+    ...["0,5", "0,99"].map((eingabe) => [eingabe, "Die Zielnote darf nicht besser als 1,0 sein."]),
+    ...["4,01", "4,1", "7"].map((eingabe) => [eingabe, "Schlechter als 4,0 bedeutet: Abitur nicht bestanden."]),
+    ...["abc", "0x0A", "1e1", "0b11", "Infinity"].map((eingabe) => [eingabe, "Die Zielnote muss eine Zahl sein."]),
+  ]),
+
+  ...faelle("Schnitt und Zielnote", ([schnitt, ziel]) => rechner.zielStatus(schnitt, ziel), [
+    [[12, ""], { text: "", erreicht: null }],
+    [[12, "abc"], { text: "Die Zielnote muss eine Zahl sein.", erreicht: null }],
+    [[null, "1,6"], { text: "Note 1,6 = 12,20 Punkte", erreicht: null }],
+    [[12.5, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 0,30 Punkte über Ziel", erreicht: true }],
+    [[12.2, "1,6"], { text: "Note 1,6 = 12,20 Punkte · Ziel genau erreicht", erreicht: true }],
+    [[11, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 1,20 Punkte unter Ziel", erreicht: false }],
+    [[37 / 3, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 0,13 Punkte über Ziel", erreicht: true }],
+    // Angezeigt wird 12,88; ohne Runden des Schnitts vor dem Vergleich käme 0,07 heraus.
+    [[103 / 8, "1,4"], { text: "Note 1,4 = 12,80 Punkte · 0,08 Punkte über Ziel", erreicht: true }],
+    [[14, "1"], { text: "Note 1 = 14,00 Punkte · Ziel genau erreicht", erreicht: true }],
+    [[5, "4"], { text: "Note 4 = 5,00 Punkte · Ziel genau erreicht", erreicht: true }],
+  ]),
+
+  ...faelle("Gespeichert", rechner.ladeZustand,
+    [null, "", "{kaputt", "[]", "42", '{"faecher":"x"}', gespeichert([], "")].map((text) => [text, { faecher: [], ziel: "" }])),
+  ["Speichern und Laden ergibt dieselben Fächer und dieselbe Zielnote",
+    () => rechner.ladeZustand(gespeichert([fach("Mathe", 10), fach("Deutsch", 13)], "1,6")),
+    { faecher: [fach("Mathe", 10), fach("Deutsch", 13)], ziel: "1,6" }],
+  ["Ungültige und doppelte gespeicherte Fächer werden verworfen, das erste gültige bleibt",
+    () => rechner.ladeZustand(gespeichert([
+      fach("Mathe", 12), fach("Deutsch", 16), fach("  ", 5), fach("Kunst", "7"), fach("Physik", 7.5), fach("Bio", -1),
+      fach(123, 5), fach({}, 5), fach(["a"], 5), { punkte: 5 }, null, "Chemie", 5, fach("mathe", 5), fach("Sport", 7),
+    ], "2,0")),
+    { faecher: [fach("Mathe", 12), fach("Sport", 7)], ziel: "2,0" }],
+  ...faelle("Gespeicherte Zielnote neben Mathe 12",
+    (ziel) => rechner.ladeZustand(gespeichert([fach("Mathe", 12)], ziel)),
+    ["5,0", "abc", 2, null, undefined].map((ziel) => [ziel, { faecher: [fach("Mathe", 12)], ziel: "" }])),
 ];
 
 // Führt alle Testfälle aus. Gibt [{ name, bestanden, meldung }] zurück.
+// Verglichen wird über JSON, damit auch Objekte und Listen verglichen werden können.
 function fuehreTestsAus() {
-  return TESTFAELLE.map((test) => {
+  return TESTFAELLE.map(([name, funktion, soll]) => {
     try {
-      test.pruefe();
-      return { name: test.name, bestanden: true, meldung: "" };
+      const ist = JSON.stringify(funktion());
+      const bestanden = ist === JSON.stringify(soll);
+      return { name, bestanden, meldung: bestanden ? "" : `erwartet ${JSON.stringify(soll)}, bekommen ${ist}` };
     } catch (fehler) {
-      return { name: test.name, bestanden: false, meldung: fehler.message };
+      return { name, bestanden: false, meldung: fehler.message };
     }
   });
 }
@@ -289,12 +89,10 @@ function fuehreTestsAus() {
 // Ausgabe für Node, nur wenn die Datei direkt gestartet wird.
 if (typeof module !== "undefined" && require.main === module) {
   const ergebnisse = fuehreTestsAus();
-  for (const ergebnis of ergebnisse) {
-    console.log(ergebnis.bestanden ? `✓ ${ergebnis.name}` : `✗ ${ergebnis.name}: ${ergebnis.meldung}`);
+  for (const { name, bestanden, meldung } of ergebnisse) {
+    console.log(bestanden ? `✓ ${name}` : `✗ ${name}: ${meldung}`);
   }
-  const bestanden = ergebnisse.filter((ergebnis) => ergebnis.bestanden).length;
-  console.log(`\n${bestanden} von ${ergebnisse.length} bestanden`);
-  if (bestanden < ergebnisse.length) {
-    process.exitCode = 1;
-  }
+  const anzahl = ergebnisse.filter((ergebnis) => ergebnis.bestanden).length;
+  console.log(`\n${anzahl} von ${ergebnisse.length} bestanden`);
+  if (anzahl < ergebnisse.length) process.exitCode = 1;
 }
