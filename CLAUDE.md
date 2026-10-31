@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Runden 1 bis 5 und der Planer (Hausaufgaben, Klausurtermine, „Demnächst“) sind umgesetzt. Login, Datenbank und echte Push-Nachrichten sind bewusst weggelassen (Begründung in der README). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
+Runden 1 bis 6 (zuletzt: Design fürs Handy) und der Planer (Hausaufgaben, Klausurtermine, „Demnächst“) sind umgesetzt. Login, Datenbank und echte Push-Nachrichten sind bewusst weggelassen (Begründung in der README). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
 
 - Code-Review mit dem Subagent `code-reviewer` ist erledigt (Stand 31.10.2026): Name-Typ beim Laden, strenge Zahlprüfung und fehlende Tests sind behoben.
 - Noch offene Funde stehen in `OFFENE_PUNKTE.md`.

@@ -71,17 +71,18 @@ const TESTFAELLE = [
   ]),
 
   ...faelle("Schnitt und Zielnote", ([schnitt, ziel]) => rechner.zielStatus(schnitt, ziel), [
-    [[12, ""], { text: "", erreicht: null }],
-    [[12, "abc"], { text: "Die Zielnote muss eine Zahl sein.", erreicht: null }],
-    [[null, "1,6"], { text: "Note 1,6 = 12,20 Punkte", erreicht: null }],
-    [[12.5, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 0,30 Punkte über Ziel", erreicht: true }],
-    [[12.2, "1,6"], { text: "Note 1,6 = 12,20 Punkte · Ziel genau erreicht", erreicht: true }],
-    [[11, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 1,20 Punkte unter Ziel", erreicht: false }],
-    [[37 / 3, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 0,13 Punkte über Ziel", erreicht: true }],
+    [[12, ""], { text: "", vergleich: "", erreicht: null }],
+    [[12, "abc"], { text: "Die Zielnote muss eine Zahl sein.", vergleich: "", erreicht: null }],
+    [[null, "1,6"], { text: "Note 1,6 = 12,20 Punkte", vergleich: "", erreicht: null }],
+    [[12.5, "1,6"], { text: "Note 1,6 = 12,20 Punkte", vergleich: "0,30 Punkte über Ziel", erreicht: true }],
+    [[12.2, "1,6"], { text: "Note 1,6 = 12,20 Punkte", vergleich: "Ziel genau erreicht", erreicht: true }],
+    [[11, "1,6"], { text: "Note 1,6 = 12,20 Punkte", vergleich: "1,20 Punkte unter Ziel", erreicht: false }],
+    [[37 / 3, "1,6"], { text: "Note 1,6 = 12,20 Punkte", vergleich: "0,13 Punkte über Ziel", erreicht: true }],
     // Angezeigt wird 12,88; ohne Runden des Schnitts vor dem Vergleich käme 0,07 heraus.
-    [[103 / 8, "1,4"], { text: "Note 1,4 = 12,80 Punkte · 0,08 Punkte über Ziel", erreicht: true }],
-    [[14, "1"], { text: "Note 1 = 14,00 Punkte · Ziel genau erreicht", erreicht: true }],
-    [[5, "4"], { text: "Note 4 = 5,00 Punkte · Ziel genau erreicht", erreicht: true }],
+    [[103 / 8, "1,4"], { text: "Note 1,4 = 12,80 Punkte", vergleich: "0,08 Punkte über Ziel", erreicht: true }],
+    [[14, "1"], { text: "Note 1,0 = 14,00 Punkte", vergleich: "Ziel genau erreicht", erreicht: true }],
+    [[5, "4"], { text: "Note 4,0 = 5,00 Punkte", vergleich: "Ziel genau erreicht", erreicht: true }],
+    [[12, "1,65"], { text: "Note 1,65 = 12,05 Punkte", vergleich: "0,05 Punkte unter Ziel", erreicht: false }],
   ]),
 
   // Runde 5: Mathe 10 (Faktor 2, 2 offen) und Deutsch 13 (Faktor 1, 1 offen) mit Ziel 1,6 = 12,20 Punkte:
@@ -149,14 +150,14 @@ TESTFAELLE.push(
       [klausur("Geschichte", "2026-11-07"), klausur("Chemie", "2026-10-30"), klausur("Mathe", "2026-10-31")],
       "2026-10-31"),
     [
-      { text: "Überfällig seit Do, 29.10.2026 · Hausaufgabe: Bio", ueberfaellig: true },
-      { text: "Heute · Klausur: Mathe", ueberfaellig: false },
-      { text: "Morgen · Hausaufgabe: Deutsch", ueberfaellig: false },
-      { text: "Sa, 07.11.2026 · Klausur: Geschichte", ueberfaellig: false },
+      { wann: "Überfällig seit Do, 29.10.2026", was: "Hausaufgabe: Bio", ueberfaellig: true },
+      { wann: "Heute", was: "Klausur: Mathe", ueberfaellig: false },
+      { wann: "Morgen", was: "Hausaufgabe: Deutsch", ueberfaellig: false },
+      { wann: "Sa, 07.11.2026", was: "Klausur: Geschichte", ueberfaellig: false },
     ]],
   ["Demnächst über den Jahreswechsel",
     () => rechner.demnaechst([], [klausur("Mathe", "2027-01-05"), klausur("Kunst", "2027-01-04")], "2026-12-28"),
-    [{ text: "Mo, 04.01.2027 · Klausur: Kunst", ueberfaellig: false }]],
+    [{ wann: "Mo, 04.01.2027", was: "Klausur: Kunst", ueberfaellig: false }]],
   ["Demnächst ohne Einträge ist leer", () => rechner.demnaechst([], [], "2026-10-31"), []],
 
   ...faelle("Gespeicherter Planer", rechner.ladePlaner,

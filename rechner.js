@@ -128,11 +128,11 @@ function demnaechst(hausaufgaben, klausuren, heute) {
     return datum === plusTage(heute, 1) ? "Morgen" : formatiereDatum(datum);
   };
   return [
-    ...hausaufgaben.filter((aufgabe) => !aufgabe.erledigt && aufgabe.datum <= bis).map(({ datum, text }) => ({ datum, text: `Hausaufgabe: ${text}` })),
-    ...klausuren.filter(({ datum }) => datum >= heute && datum <= bis).map(({ datum, text }) => ({ datum, text: `Klausur: ${text}` })),
+    ...hausaufgaben.filter((aufgabe) => !aufgabe.erledigt && aufgabe.datum <= bis).map(({ datum, text }) => ({ datum, was: `Hausaufgabe: ${text}` })),
+    ...klausuren.filter(({ datum }) => datum >= heute && datum <= bis).map(({ datum, text }) => ({ datum, was: `Klausur: ${text}` })),
   ]
     .sort((a, b) => a.datum.localeCompare(b.datum))
-    .map(({ datum, text }) => ({ text: `${wann(datum)} · ${text}`, ueberfaellig: datum < heute }));
+    .map(({ datum, was }) => ({ wann: wann(datum), was, ueberfaellig: datum < heute }));
 }
 
 // Ein leeres Feld bedeutet „kein Ziel“ und ergibt wert null.
@@ -161,20 +161,21 @@ function punkteFuerNote(note) {
   return rundeAufHundertstel(17 - 3 * note);
 }
 
-// Text unter dem Zielfeld, z. B. "Note 1,6 = 12,20 Punkte · 0,30 Punkte über Ziel".
-// erreicht ist null, solange es nichts zu vergleichen gibt.
+// Texte unter dem Zielfeld: text ist die Umrechnung ("Note 1,6 = 12,20 Punkte") oder der Fehler,
+// vergleich z. B. "0,30 Punkte über Ziel". erreicht ist null, solange es nichts zu vergleichen gibt.
 function zielStatus(schnitt, zielEingabe) {
   const ziel = pruefeZielNote(zielEingabe);
-  if (!ziel.ok) return { text: ziel.fehler, erreicht: null };
-  if (ziel.wert === null) return { text: "", erreicht: null };
+  if (!ziel.ok) return { text: ziel.fehler, vergleich: "", erreicht: null };
+  if (ziel.wert === null) return { text: "", vergleich: "", erreicht: null };
   const zielPunkte = punkteFuerNote(ziel.wert);
-  const text = `Note ${mitKomma(ziel.wert)} = ${formatiereSchnitt(zielPunkte)} Punkte`;
-  if (schnitt === null) return { text, erreicht: null };
+  // Mindestens eine Nachkommastelle, damit "2" als „Note 2,0“ erscheint.
+  const text = `Note ${ziel.wert.toLocaleString("de-DE", { minimumFractionDigits: 1 })} = ${formatiereSchnitt(zielPunkte)} Punkte`;
+  if (schnitt === null) return { text, vergleich: "", erreicht: null };
   // Gerundet vergleichen, damit der angezeigte Schnitt und der Abstand zusammenpassen.
   const abstand = rundeAufHundertstel(rundeAufHundertstel(schnitt) - zielPunkte);
   const betrag = formatiereSchnitt(Math.abs(abstand));
   const vergleich = abstand === 0 ? "Ziel genau erreicht" : `${betrag} Punkte ${abstand < 0 ? "unter" : "über"} Ziel`;
-  return { text: `${text} · ${vergleich}`, erreicht: abstand >= 0 };
+  return { text, vergleich, erreicht: abstand >= 0 };
 }
 
 // „Was brauche ich noch?“ mit der vereinfachenden Annahme: Die Punkte eines Fachs zählen wie eine Klausur,

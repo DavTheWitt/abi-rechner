@@ -12,7 +12,7 @@ Abi-Rechner
 - **Runde 3:** Fächer, Punkte und Zielschnitt bleiben im Browser gespeichert (localStorage), auch nach dem Neuladen. Dazu ein Zurücksetzen-Button.
   - Test: Werte eintragen, F5 → alles noch da. Zurücksetzen → alles leer.
 
-### Version 2 (Runden 4 bis 7, nach dem Hooks-Block)
+### Version 2 (Runden 4 bis 6, nach dem Hooks-Block) (erledigt)
 
 - **Runde 4:** Jedes Fach bekommt einen Gewichtungsfaktor (Standard 1), den du selbst einstellst. Der Durchschnitt wird gewichtet berechnet. Keine fest eingebaute Regel für Leistungs- oder Grundkurse.
   - Test: Mathe Faktor 2 mit 10 Punkten, Deutsch Faktor 1 mit 13 → (10×2 + 13×1) / 3 = 11,00.
@@ -20,6 +20,8 @@ Abi-Rechner
   - Annahme: Die Punkte eines Fachs zählen wie eine Klausur, jede offene Klausur zählt genauso viel, beides mit dem Faktor des Fachs.
   - Test: Mathe 10 (Faktor 2, 2 offen), Deutsch 13 (Faktor 1, 1 offen), Zielnote 1,6 → „im Schnitt mindestens 12,92 Punkte“. Zielnote 1,0 → „Nicht mehr erreichbar“ in Rot.
 - **Runde 6:** Handytauglich und ordentliches Design, damit du den Link zeigen kannst. Weiter kein Framework, keine externen Bibliotheken.
+  - Umsetzung: Kästchenpapier und Königsblau-Tinte, rot wie der Rotstift bei „unter Ziel“; im Dunkelmodus eine Tafel. Schrift aus dem System (DIN/Bahnschrift), nichts wird aus dem Netz geladen.
+  - Test: Seite auf dem Handy öffnen → eine Spalte, nichts scrollt seitlich. Handy auf dunkel stellen → Tafel.
 
 ### Wenn die anderen Punkte fertig sind, dann mach diese 
 
