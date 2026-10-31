@@ -12,10 +12,11 @@ function rundeAufHundertstel(wert) {
 
 // Liest eine Zahl mit Punkt oder Komma. Gibt null bei leerer Eingabe und NaN bei keiner Zahl zurück.
 // Die Regex, weil Number() allein auch "0x0A" oder "1e1" annehmen würde.
+// "1," ist erlaubt, damit beim Eintippen von "1,6" kein Fehler aufblitzt.
 function leseZahl(eingabe) {
   const text = String(eingabe ?? "").trim();
   if (text === "") return null;
-  return /^-?\d+([.,]\d+)?$/.test(text) ? Number(text.replace(",", ".")) : NaN;
+  return /^-?\d+([.,]\d*)?$/.test(text) ? Number(text.replace(",", ".")) : NaN;
 }
 
 // Mit der Liste faecher wird auch ein schon vorhandenes Fach abgelehnt, egal in welcher Schreibweise.

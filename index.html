@@ -47,7 +47,7 @@
   </table>
   <p id="leer-hinweis">Noch keine Fächer eingetragen.</p>
 
-  <p id="schnitt">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
+  <p id="schnitt" role="status">Durchschnitt: <strong id="schnitt-wert">–</strong></p>
 
   <label>
     Zielschnitt (Note, z. B. 1,6)
@@ -78,15 +78,20 @@
         const entfernen = zeile.insertCell().appendChild(document.createElement("button"));
         entfernen.textContent = "Entfernen";
         entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
-        entfernen.onclick = () => {
+        entfernen.onclick = (event) => {
+          if (event.detail > 1) return; // Doppelklick: der zweite Klick träfe sonst schon das nächste Fach
           faecher.splice(index, 1);
           zeichne();
+          // Fokus auf den Knopf, der jetzt an dieser Stelle steht; sonst springt er an den Seitenanfang.
+          (liste.rows[Math.min(index, faecher.length - 1)]?.querySelector("button") ?? nameFeld).focus();
         };
       });
       document.getElementById("leer-hinweis").hidden = faecher.length > 0;
 
       const schnitt = durchschnitt(faecher);
-      document.getElementById("schnitt-wert").textContent = formatiereSchnitt(schnitt);
+      const schnittWert = document.getElementById("schnitt-wert");
+      // Nur bei Änderung setzen: #schnitt wird vorgelesen und soll das nicht bei jedem Tastendruck im Zielfeld tun.
+      if (schnittWert.textContent !== formatiereSchnitt(schnitt)) schnittWert.textContent = formatiereSchnitt(schnitt);
       const ziel = zielStatus(schnitt, zielFeld.value);
       zielAbstand.textContent = ziel.text;
       let klasse = "";

@@ -22,7 +22,7 @@ const TESTFAELLE = [
     ["7,5", "Punkte müssen eine ganze Zahl sein."],
     ...["", null, undefined].map((eingabe) => [eingabe, "Bitte Punkte eingeben."]),
     ...["abc", "0x0A", "1e1", "0b11", "Infinity"].map((eingabe) => [eingabe, "Punkte müssen eine Zahl sein."]),
-    ["0", 0], ["-0", 0], ["15", 15], [12, 12], ["12,0", 12], [" 12 ", 12], ["12.0", 12],
+    ["0", 0], ["-0", 0], ["15", 15], [12, 12], ["12,0", 12], [" 12 ", 12], ["12.0", 12], ["12,", 12],
   ]),
 
   ...faelle("Fachname", (eingabe) => wertOderFehler(rechner.pruefeName(eingabe)), [
@@ -36,7 +36,7 @@ const TESTFAELLE = [
     ]),
 
   ...faelle("Zielnote", (eingabe) => wertOderFehler(rechner.pruefeZielNote(eingabe)), [
-    ["", null], ["1,0", 1], ["1.5", 1.5], [" 2 ", 2], ["4,0", 4],
+    ["", null], ["1,0", 1], ["1,", 1], ["1.5", 1.5], [" 2 ", 2], ["4,0", 4],
     ...["0,5", "0,99"].map((eingabe) => [eingabe, "Die Zielnote darf nicht besser als 1,0 sein."]),
     ...["4,01", "4,1", "7"].map((eingabe) => [eingabe, "Schlechter als 4,0 bedeutet: Abitur nicht bestanden."]),
     ...["abc", "0x0A", "1e1", "0b11", "Infinity"].map((eingabe) => [eingabe, "Die Zielnote muss eine Zahl sein."]),
@@ -50,6 +50,8 @@ const TESTFAELLE = [
     [[12.2, "1,6"], { text: "Note 1,6 = 12,20 Punkte · Ziel genau erreicht", erreicht: true }],
     [[11, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 1,20 Punkte unter Ziel", erreicht: false }],
     [[37 / 3, "1,6"], { text: "Note 1,6 = 12,20 Punkte · 0,13 Punkte über Ziel", erreicht: true }],
+    // Angezeigt wird 12,88; ohne Runden des Schnitts vor dem Vergleich käme 0,07 heraus.
+    [[103 / 8, "1,4"], { text: "Note 1,4 = 12,80 Punkte · 0,08 Punkte über Ziel", erreicht: true }],
     [[14, "1"], { text: "Note 1 = 14,00 Punkte · Ziel genau erreicht", erreicht: true }],
     [[5, "4"], { text: "Note 4 = 5,00 Punkte · Ziel genau erreicht", erreicht: true }],
   ]),
