@@ -222,6 +222,8 @@ const TESTFAELLE = [
           { name: "  ", punkte: 5 },
           { name: "Kunst", punkte: "7" },
           null,
+          "Physik",
+          5,
           { name: "Sport", punkte: 7 },
         ],
         ziel: "2,0",

@@ -5,6 +5,7 @@ const MIN_PUNKTE = 0;
 const MAX_PUNKTE = 15;
 const BESTE_NOTE = 1;
 const SCHLECHTESTE_NOTE = 4;
+const SPEICHER_SCHLUESSEL = "abi-rechner";
 
 // Erlaubt nur normale Dezimalzahlen mit Punkt oder Komma, z. B. "12", "-1" oder "1,6".
 // Number() allein würde auch "0x0A" oder "1e1" annehmen.
@@ -47,7 +48,7 @@ function pruefePunkte(eingabe) {
 // Prüft, ob es ein Fach mit diesem Namen schon gibt. Groß- und Kleinschreibung zählt nicht.
 function istDoppelt(faecher, name) {
   const gesucht = name.trim().toLowerCase();
-  return faecher.some((fach) => fach.name.trim().toLowerCase() === gesucht);
+  return faecher.some((fach) => fach.name.toLowerCase() === gesucht);
 }
 
 // Durchschnitt einer Liste von Fächern ({ name, punkte }).
@@ -120,8 +121,6 @@ function formatiereAbstand(vergleich) {
   return vergleich.abstand < 0 ? `${betrag} Punkte unter Ziel` : `${betrag} Punkte über Ziel`;
 }
 
-const SPEICHER_SCHLUESSEL = "abi-rechner";
-
 // Macht aus Fächern und Zielnote-Text den String, der im localStorage liegt.
 function serialisiereZustand(faecher, zielText) {
   return JSON.stringify({ faecher, ziel: zielText });
@@ -137,17 +136,12 @@ function ladeZustand(text) {
   } catch {
     return leer;
   }
-  if (daten === null || typeof daten !== "object" || !Array.isArray(daten.faecher)) {
+  if (!Array.isArray(daten?.faecher)) {
     return leer;
   }
   const faecher = [];
   for (const eintrag of daten.faecher) {
-    if (
-      eintrag === null ||
-      typeof eintrag !== "object" ||
-      typeof eintrag.name !== "string" ||
-      typeof eintrag.punkte !== "number"
-    ) {
+    if (typeof eintrag?.name !== "string" || typeof eintrag?.punkte !== "number") {
       continue;
     }
     const name = pruefeName(eintrag.name);

@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Runde 3 ist umgesetzt (Speichern im localStorage und Zurücksetzen). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
 
 - Code-Review mit dem Subagent `code-reviewer` ist erledigt (Stand 31.10.2026): Name-Typ beim Laden, strenge Zahlprüfung und fehlende Tests sind behoben.
-- Offen, bewusst nicht umgesetzt: überflüssiges `removeItem` beim Zurücksetzen, feste Zahlen in Fehlertexten, `aria-label` bei den Entfernen-Buttons.
+- Noch offene Funde stehen in `OFFENE_PUNKTE.md`.
 
 ## Projektregeln
 

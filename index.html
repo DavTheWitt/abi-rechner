@@ -159,14 +159,14 @@
       const zielPunkte = noteZuPunkten(ziel.wert);
       const umrechnung = `Note ${String(ziel.wert).replace(".", ",")} = ${formatiereSchnitt(zielPunkte)} Punkte`;
       const vergleich = vergleicheMitZiel(durchschnitt(faecher), zielPunkte);
-      zielAbstand.textContent = vergleich === null
-        ? umrechnung
-        : `${umrechnung} · ${formatiereAbstand(vergleich)}`;
-      if (vergleich !== null) {
-        const klasse = vergleich.erreicht ? "ziel-erreicht" : "unter-ziel";
-        zielFeld.classList.add(klasse);
-        zielAbstand.classList.add(klasse);
+      if (vergleich === null) {
+        zielAbstand.textContent = umrechnung;
+        return;
       }
+      zielAbstand.textContent = `${umrechnung} · ${formatiereAbstand(vergleich)}`;
+      const klasse = vergleich.erreicht ? "ziel-erreicht" : "unter-ziel";
+      zielFeld.classList.add(klasse);
+      zielAbstand.classList.add(klasse);
     }
 
     function zeichne() {
@@ -211,6 +211,7 @@
         return;
       }
       faecher.length = 0;
+      formular.reset();
       zielFeld.value = "";
       fehlerAnzeige.textContent = "";
       zeichne();

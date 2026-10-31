@@ -26,7 +26,4 @@ Alles, was beim Code-Review (31.10.2026) gefunden und noch nicht behoben wurde. 
 ## Aus dem zweiten Review (Commit 3363385)
 
 - Die Meldung "Dieses Fach gibt es schon." steht in `index.html`, alle anderen Prüfmeldungen kommen aus `rechner.js`. Besser wäre eine Prüffunktion mit `{ ok, fehler }`, dann ist die Meldung testbar.
-- `istDoppelt`: `trim()` auf `fach.name` ist unnötig, weil gespeicherte Namen schon getrimmt sind. Harmlos.
-- Zurücksetzen leert die Eingabefelder für Fach und Punkte nicht. Halb getippte Eingaben bleiben stehen.
 - `toLowerCase()` kennt keine Unicode-Normalisierung ("ß" gegen "SS", zusammengesetzte gegen vorkomponierte Umlaute). Für diesen Zweck vernachlässigbar.
-- `SPEICHER_SCHLUESSEL` steht noch mitten in `rechner.js`, nicht bei den anderen Konstanten oben.
