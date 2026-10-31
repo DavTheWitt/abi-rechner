@@ -14,7 +14,9 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #ddd; }
     #schnitt { font-size: 1.5rem; margin-top: 1.5rem; }
-    #punkte, #faktor, #ziel { width: 5rem; }
+    #punkte, #faktor, #offen, #ziel { width: 5rem; }
+    #noch-noetig { font-size: 1.2rem; min-height: 1.5em; }
+    #noch-noetig.unter-ziel { color: #c62828; font-weight: bold; }
     #ziel { border: 3px solid #999; }
     #ziel.unter-ziel { background: #ffcdd2; border-color: #c62828; }
     #ziel.ziel-erreicht { background: #c8e6c9; border-color: #2e7d32; }
@@ -39,13 +41,17 @@
       Faktor
       <input id="faktor" name="faktor" type="text" inputmode="decimal" value="1" autocomplete="off">
     </label>
+    <label>
+      Offene Klausuren
+      <input id="offen" name="offen" type="text" inputmode="numeric" value="0" autocomplete="off">
+    </label>
     <button type="submit">Hinzufügen</button>
   </form>
   <p id="fehler" role="alert"></p>
 
   <table>
     <thead>
-      <tr><th>Fach</th><th>Punkte</th><th>Faktor</th><th></th></tr>
+      <tr><th>Fach</th><th>Punkte</th><th>Faktor</th><th>Offene Klausuren</th><th></th></tr>
     </thead>
     <tbody id="liste"></tbody>
   </table>
@@ -58,6 +64,14 @@
     <input id="ziel" type="text" inputmode="decimal" autocomplete="off">
   </label>
   <p id="ziel-abstand" role="status"></p>
+
+  <h2>Was brauche ich noch?</h2>
+  <p id="noch-noetig" role="status"></p>
+  <p>
+    Trag bei jedem Fach ein, wie viele Klausuren noch offen sind, und gib einen Zielschnitt ein.
+    Vereinfachte Annahme: Die Punkte eines Fachs zählen wie eine Klausur, jede offene Klausur zählt genauso viel,
+    beides mit dem Faktor des Fachs.
+  </p>
 
   <button id="zuruecksetzen" type="button">Zurücksetzen</button>
 
@@ -79,6 +93,7 @@
         zeile.insertCell().textContent = fach.name;
         zeile.insertCell().textContent = fach.punkte;
         zeile.insertCell().textContent = mitKomma(fach.faktor);
+        zeile.insertCell().textContent = fach.offen;
         const entfernen = zeile.insertCell().appendChild(document.createElement("button"));
         entfernen.textContent = "Entfernen";
         entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
@@ -101,6 +116,10 @@
       let klasse = "";
       if (ziel.erreicht !== null) klasse = ziel.erreicht ? "ziel-erreicht" : "unter-ziel";
       zielFeld.className = zielAbstand.className = klasse;
+      const noch = nochNoetig(faecher, zielFeld.value);
+      const nochAnzeige = document.getElementById("noch-noetig");
+      nochAnzeige.textContent = noch.text;
+      nochAnzeige.className = noch.erreichbar === false ? "unter-ziel" : "";
 
       // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
       try {

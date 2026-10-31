@@ -3,7 +3,7 @@
 // In Node kommt die Rechenlogik über require, im Browser aus dem vorher geladenen rechner.js.
 const rechner = typeof require === "function" ? require("./rechner.js") : globalThis;
 
-const fach = (name, punkte, faktor = 1) => ({ name, punkte, faktor });
+const fach = (name, punkte, faktor = 1, offen = 0) => ({ name, punkte, faktor, offen });
 const gespeichert = (faecher, ziel) => JSON.stringify({ faecher, ziel });
 const wertOderFehler = (pruefung) => (pruefung.ok ? pruefung.wert : pruefung.fehler);
 
@@ -26,9 +26,18 @@ const TESTFAELLE = [
     ...["10,5", "11"].map((eingabe) => [eingabe, "Der Faktor darf nicht über 10 liegen."]),
     ...["abc", "1e1"].map((eingabe) => [eingabe, "Der Faktor muss eine Zahl sein."]),
   ]),
+  ...faelle("Offene Klausuren", (eingabe) => wertOderFehler(rechner.pruefeOffeneKlausuren(eingabe)), [
+    ["", 0], ["0", 0], ["3", 3], ["10", 10],
+    ["-1", "Offene Klausuren dürfen nicht unter 0 liegen."],
+    ["11", "Offene Klausuren dürfen nicht über 10 liegen."],
+    ["1,5", "Offene Klausuren müssen eine ganze Zahl sein."],
+    ["zwei", "Offene Klausuren müssen eine Zahl sein."],
+  ]),
   ...faelle("Neben Mathe: Fach mit Eingaben", (eingaben) => rechner.pruefeFach(eingaben, [fach("Mathe", 10)]), [
-    [{ name: " Deutsch ", punkte: "12", faktor: "2" }, { ok: true, wert: fach("Deutsch", 12, 2) }],
-    [{ name: "Deutsch", punkte: "12", faktor: "" }, { ok: true, wert: fach("Deutsch", 12, 1) }],
+    [{ name: " Deutsch ", punkte: "12", faktor: "2", offen: "3" }, { ok: true, wert: fach("Deutsch", 12, 2, 3) }],
+    [{ name: "Deutsch", punkte: "12", faktor: "", offen: "" }, { ok: true, wert: fach("Deutsch", 12, 1, 0) }],
+    [{ name: "Deutsch", punkte: "12", faktor: "1", offen: "-1" },
+      { ok: false, fehler: "Offene Klausuren dürfen nicht unter 0 liegen.", feld: "offen" }],
     // Der erste Fehler von oben zählt.
     [{ name: "mathe", punkte: "16", faktor: "0" }, { ok: false, fehler: "Dieses Fach gibt es schon.", feld: "name" }],
     [{ name: "Deutsch", punkte: "16", faktor: "0" }, { ok: false, fehler: "Punkte dürfen nicht über 15 liegen.", feld: "punkte" }],
@@ -75,21 +84,42 @@ const TESTFAELLE = [
     [[5, "4"], { text: "Note 4 = 5,00 Punkte · Ziel genau erreicht", erreicht: true }],
   ]),
 
+  // Runde 5: Mathe 10 (Faktor 2, 2 offen) und Deutsch 13 (Faktor 1, 1 offen) mit Ziel 1,6 = 12,20 Punkte:
+  // (12,20 · (3 + 5) − 33) / 5 = 12,92
+  ...faelle("Was brauche ich noch", ([faecher, ziel]) => rechner.nochNoetig(faecher, ziel), [
+    [[[fach("Mathe", 10, 2, 2), fach("Deutsch", 13, 1, 1)], "1,6"],
+      { text: "Du brauchst in den 3 offenen Klausuren im Schnitt mindestens 12,92 Punkte.", erreichbar: true }],
+    [[[fach("Mathe", 10, 1, 1), fach("Deutsch", 13)], "2,0"],
+      { text: "Du brauchst in der offenen Klausur mindestens 10,00 Punkte.", erreichbar: true }],
+    [[[fach("Mathe", 13, 1, 1)], "1,0"], { text: "Du brauchst in der offenen Klausur mindestens 15,00 Punkte.", erreichbar: true }],
+    [[[fach("Mathe", 5, 1, 1)], "1,0"],
+      { text: "Nicht mehr erreichbar: Du bräuchtest in der offenen Klausur 23,00 Punkte, möglich sind höchstens 15.", erreichbar: false }],
+    [[[fach("Mathe", 10, 2, 2), fach("Deutsch", 13, 1, 1)], "1,0"],
+      { text: "Nicht mehr erreichbar: Du bräuchtest in den 3 offenen Klausuren im Schnitt 15,80 Punkte, möglich sind höchstens 15.", erreichbar: false }],
+    [[[fach("Mathe", 10, 1, 1)], "4,0"], { text: "Dein Ziel ist sicher, selbst mit 0 Punkten in der offenen Klausur.", erreichbar: true }],
+    [[[fach("Mathe", 15, 1, 2), fach("Deutsch", 15)], "4,0"],
+      { text: "Dein Ziel ist sicher, selbst mit 0 Punkten in den 2 offenen Klausuren.", erreichbar: true }],
+    ...[
+      [[fach("Mathe", 10)], "1,6"], [[fach("Mathe", 10, 1, 1)], ""], [[fach("Mathe", 10, 1, 1)], "abc"], [[], "1,6"],
+    ].map((eingabe) => [eingabe, { text: "", erreichbar: null }]),
+  ]),
+
   ...faelle("Gespeichert", rechner.ladeZustand,
     [null, "", "{kaputt", "[]", "42", '{"faecher":"x"}', gespeichert([], "")].map((text) => [text, { faecher: [], ziel: "" }])),
   ["Speichern und Laden ergibt dieselben Fächer und dieselbe Zielnote",
-    () => rechner.ladeZustand(gespeichert([fach("Mathe", 10, 2), fach("Deutsch", 13)], "1,6")),
-    { faecher: [fach("Mathe", 10, 2), fach("Deutsch", 13)], ziel: "1,6" }],
-  ["Speicherstand ohne Faktor (vor Runde 4) bekommt Faktor 1",
+    () => rechner.ladeZustand(gespeichert([fach("Mathe", 10, 2, 3), fach("Deutsch", 13)], "1,6")),
+    { faecher: [fach("Mathe", 10, 2, 3), fach("Deutsch", 13)], ziel: "1,6" }],
+  ["Speicherstand von vor Runde 4 bekommt Faktor 1 und 0 offene Klausuren",
     () => rechner.ladeZustand('{"faecher":[{"name":"Mathe","punkte":10}],"ziel":"2,0"}'),
     { faecher: [fach("Mathe", 10, 1)], ziel: "2,0" }],
   ["Ungültige und doppelte gespeicherte Fächer werden verworfen, das erste gültige bleibt",
     () => rechner.ladeZustand(gespeichert([
       fach("Mathe", 12), fach("Deutsch", 16), fach("  ", 5), fach("Kunst", "7"), fach("Physik", 7.5), fach("Bio", -1),
       fach(123, 5), fach({}, 5), fach(["a"], 5), { punkte: 5 }, null, "Chemie", 5, fach("mathe", 5),
-      fach("Chemie", 7, 0), fach("Chemie", 7, "2"), fach("Chemie", 7, null), fach("Chemie", 7, 11), fach("Geo", 8, 2), fach("Sport", 7),
+      fach("Chemie", 7, 0), fach("Chemie", 7, "2"), fach("Chemie", 7, null), fach("Chemie", 7, 11),
+      fach("Chemie", 7, 1, -1), fach("Chemie", 7, 1, 1.5), fach("Chemie", 7, 1, "2"), fach("Geo", 8, 2, 3), fach("Sport", 7),
     ], "2,0")),
-    { faecher: [fach("Mathe", 12), fach("Geo", 8, 2), fach("Sport", 7)], ziel: "2,0" }],
+    { faecher: [fach("Mathe", 12), fach("Geo", 8, 2, 3), fach("Sport", 7)], ziel: "2,0" }],
   ...faelle("Gespeicherte Zielnote neben Mathe 12",
     (ziel) => rechner.ladeZustand(gespeichert([fach("Mathe", 12)], ziel)),
     ["5,0", "abc", 2, null, undefined].map((ziel) => [ziel, { faecher: [fach("Mathe", 12)], ziel: "" }])),

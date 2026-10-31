@@ -57,12 +57,24 @@ function pruefeFaktor(eingabe) {
   return { ok: true, wert: zahl };
 }
 
+// Ein leeres Feld bedeutet: keine Klausur mehr offen.
+function pruefeOffeneKlausuren(eingabe) {
+  const zahl = leseZahl(eingabe);
+  if (zahl === null) return { ok: true, wert: 0 };
+  if (Number.isNaN(zahl)) return abgelehnt("Offene Klausuren müssen eine Zahl sein.");
+  if (zahl < 0) return abgelehnt("Offene Klausuren dürfen nicht unter 0 liegen.");
+  if (zahl > 10) return abgelehnt("Offene Klausuren dürfen nicht über 10 liegen.");
+  if (!Number.isInteger(zahl)) return abgelehnt("Offene Klausuren müssen eine ganze Zahl sein.");
+  return { ok: true, wert: zahl };
+}
+
 // Prüft alle Eingaben eines Fachs. Beim ersten Fehler steht in feld, zu welcher Eingabe er gehört.
 function pruefeFach(eingaben, faecher) {
   const pruefungen = Object.entries({
     name: pruefeName(eingaben.name, faecher),
     punkte: pruefePunkte(eingaben.punkte),
     faktor: pruefeFaktor(eingaben.faktor),
+    offen: pruefeOffeneKlausuren(eingaben.offen),
   });
   const fehler = pruefungen.find(([, pruefung]) => !pruefung.ok);
   if (fehler) return { ok: false, fehler: fehler[1].fehler, feld: fehler[0] };
@@ -90,13 +102,18 @@ function formatiereSchnitt(wert) {
   return wert === null ? "–" : wert.toFixed(2).replace(".", ",");
 }
 
+// Umkehrung der Abi-Formel Note = (17 − Punkte) / 3.
+function punkteFuerNote(note) {
+  return rundeAufHundertstel(17 - 3 * note);
+}
+
 // Text unter dem Zielfeld, z. B. "Note 1,6 = 12,20 Punkte · 0,30 Punkte über Ziel".
 // erreicht ist null, solange es nichts zu vergleichen gibt.
 function zielStatus(schnitt, zielEingabe) {
   const ziel = pruefeZielNote(zielEingabe);
   if (!ziel.ok) return { text: ziel.fehler, erreicht: null };
   if (ziel.wert === null) return { text: "", erreicht: null };
-  const zielPunkte = rundeAufHundertstel(17 - 3 * ziel.wert); // Umkehrung der Abi-Formel
+  const zielPunkte = punkteFuerNote(ziel.wert);
   const text = `Note ${mitKomma(ziel.wert)} = ${formatiereSchnitt(zielPunkte)} Punkte`;
   if (schnitt === null) return { text, erreicht: null };
   // Gerundet vergleichen, damit der angezeigte Schnitt und der Abstand zusammenpassen.
@@ -104,6 +121,28 @@ function zielStatus(schnitt, zielEingabe) {
   const betrag = formatiereSchnitt(Math.abs(abstand));
   const vergleich = abstand === 0 ? "Ziel genau erreicht" : `${betrag} Punkte ${abstand < 0 ? "unter" : "über"} Ziel`;
   return { text: `${text} · ${vergleich}`, erreicht: abstand >= 0 };
+}
+
+// „Was brauche ich noch?“ mit der vereinfachenden Annahme: Die Punkte eines Fachs zählen wie eine Klausur,
+// jede offene Klausur zählt genauso viel, beides mit dem Faktor des Fachs. Gesucht ist der Schnitt x
+// aller offenen Klausuren, mit dem der gewichtete Schnitt aus allem die Zielpunkte erreicht.
+// erreichbar ist null, solange es nichts zu rechnen gibt (kein gültiges Ziel oder keine offene Klausur).
+function nochNoetig(faecher, zielEingabe) {
+  const ziel = pruefeZielNote(zielEingabe);
+  const anzahl = summe(faecher, (fach) => fach.offen);
+  if (!ziel.ok || ziel.wert === null || anzahl === 0) return { text: "", erreichbar: null };
+  const offenesGewicht = summe(faecher, (fach) => fach.offen * fach.faktor);
+  const gesamtGewicht = summe(faecher, (fach) => fach.faktor) + offenesGewicht;
+  const bisher = summe(faecher, (fach) => fach.punkte * fach.faktor);
+  // Normal gerundet reicht: Ein Fehler unter 0,005 bei x verschwindet im gerundeten Schnitt, den zielStatus vergleicht.
+  const x = rundeAufHundertstel((punkteFuerNote(ziel.wert) * gesamtGewicht - bisher) / offenesGewicht);
+  const wo = anzahl === 1 ? "in der offenen Klausur" : `in den ${anzahl} offenen Klausuren`;
+  const imSchnitt = anzahl === 1 ? "" : " im Schnitt";
+  if (x > 15) {
+    return { text: `Nicht mehr erreichbar: Du bräuchtest ${wo}${imSchnitt} ${formatiereSchnitt(x)} Punkte, möglich sind höchstens 15.`, erreichbar: false };
+  }
+  if (x <= 0) return { text: `Dein Ziel ist sicher, selbst mit 0 Punkten ${wo}.`, erreichbar: true };
+  return { text: `Du brauchst ${wo}${imSchnitt} mindestens ${formatiereSchnitt(x)} Punkte.`, erreichbar: true };
 }
 
 // Liest den gespeicherten String { faecher, ziel }. Fehlende oder kaputte Daten ergeben einen leeren Zustand,
@@ -116,10 +155,11 @@ function ladeZustand(text) {
   if (!Array.isArray(daten?.faecher)) return { faecher: [], ziel: "" };
   const faecher = [];
   for (const eintrag of daten.faecher) {
-    // Speicherstände von vor Runde 4 haben keinen Faktor, dann gilt 1.
-    const { name, punkte, faktor = 1 } = eintrag ?? {};
-    if (typeof name !== "string" || typeof punkte !== "number" || typeof faktor !== "number") continue;
-    const fach = pruefeFach({ name, punkte, faktor }, faecher);
+    // Ältere Speicherstände haben keinen Faktor (vor Runde 4) und keine offenen Klausuren (vor Runde 5).
+    const { name, punkte, faktor = 1, offen = 0 } = eintrag ?? {};
+    const zahlen = [punkte, faktor, offen].every((zahl) => typeof zahl === "number");
+    if (typeof name !== "string" || !zahlen) continue;
+    const fach = pruefeFach({ name, punkte, faktor, offen }, faecher);
     if (fach.ok) faecher.push(fach.wert);
   }
   const ziel = typeof daten.ziel === "string" && pruefeZielNote(daten.ziel).ok ? daten.ziel : "";
@@ -129,6 +169,7 @@ function ladeZustand(text) {
 // Für Tests mit Node.
 if (typeof module !== "undefined") {
   module.exports = {
-    pruefeName, pruefePunkte, pruefeFaktor, pruefeFach, pruefeZielNote, durchschnitt, formatiereSchnitt, zielStatus, ladeZustand,
+    pruefeName, pruefePunkte, pruefeFaktor, pruefeOffeneKlausuren, pruefeFach, pruefeZielNote,
+    durchschnitt, formatiereSchnitt, zielStatus, nochNoetig, ladeZustand,
   };
 }
