@@ -9,7 +9,7 @@ Runde 3 ist umgesetzt (Speichern im localStorage und Zurücksetzen). Die geplant
 ## Projektregeln
 
 - Antworten und Commit-Nachrichten auf Deutsch.
-- Das Projekt besteht aus `index.html` (Oberfläche), `rechner.js` (Rechenlogik) und später `tests.html`. Die Webseite (index.html mit rechner.js) muss ohne Installation direkt im Browser laufen. Kein Framework, keine externen Bibliotheken.
+- Das Projekt besteht aus `index.html` (Oberfläche), `rechner.js` (Rechenlogik), `tests.js` und `tests.html`. Die Webseite (index.html mit rechner.js) muss ohne Installation direkt im Browser laufen. Kein Framework, keine externen Bibliotheken.
 - Niemals echte Noten oder persönliche Daten ins Repository.
 - Jede Änderung auf einem eigenen Branch. Niemals direkt auf `main` committen oder pushen.
 - Vor jeder Änderung kurz den Plan nennen.
