@@ -5,7 +5,10 @@
 const SPEICHER_SCHLUESSEL = "abi-rechner";
 
 const abgelehnt = (fehler) => ({ ok: false, fehler });
-const rundeAufHundertstel = (wert) => Math.round(wert * 100) / 100;
+
+function rundeAufHundertstel(wert) {
+  return Math.round(wert * 100) / 100;
+}
 
 // Liest eine Zahl mit Punkt oder Komma. Gibt null bei leerer Eingabe und NaN bei keiner Zahl zurück.
 // Die Regex, weil Number() allein auch "0x0A" oder "1e1" annehmen würde.
