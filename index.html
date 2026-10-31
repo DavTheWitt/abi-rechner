@@ -184,6 +184,7 @@
         const entfernen = document.createElement("button");
         entfernen.type = "button";
         entfernen.textContent = "Entfernen";
+        entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
         entfernen.addEventListener("click", () => {
           faecher.splice(index, 1);
           zeichne();
@@ -212,9 +213,6 @@
       faecher.length = 0;
       zielFeld.value = "";
       fehlerAnzeige.textContent = "";
-      try {
-        localStorage.removeItem(SPEICHER_SCHLUESSEL);
-      } catch {}
       zeichne();
     });
 
@@ -224,6 +222,11 @@
       const name = pruefeName(nameFeld.value);
       if (!name.ok) {
         fehlerAnzeige.textContent = name.fehler;
+        nameFeld.focus();
+        return;
+      }
+      if (istDoppelt(faecher, name.wert)) {
+        fehlerAnzeige.textContent = "Dieses Fach gibt es schon.";
         nameFeld.focus();
         return;
       }

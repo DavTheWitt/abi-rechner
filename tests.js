@@ -78,6 +78,33 @@ const TESTFAELLE = [
     },
   },
   {
+    name: "Doppelte Fächer werden erkannt, auch bei anderer Schreibweise",
+    pruefe() {
+      const faecher = [{ name: "Mathe", punkte: 10 }];
+      erwarteGleich(rechner.istDoppelt(faecher, "Mathe"), true);
+      erwarteGleich(rechner.istDoppelt(faecher, "mathe"), true);
+      erwarteGleich(rechner.istDoppelt(faecher, "Deutsch"), false);
+      erwarteGleich(rechner.istDoppelt([], "Mathe"), false);
+      erwarteGleich(rechner.istDoppelt(faecher, " Mathe "), true);
+      erwarteGleich(rechner.istDoppelt(faecher, "Mathe 2"), false);
+      erwarteGleich(rechner.istDoppelt([{ name: "Ökologie", punkte: 5 }], "ökologie"), true);
+      const mehrere = [{ name: "Deutsch", punkte: 12 }, { name: "Kunst", punkte: 9 }];
+      erwarteGleich(rechner.istDoppelt(mehrere, "Kunst"), true);
+    },
+  },
+  {
+    name: "Doppelte gespeicherte Fächer werden beim Laden verworfen, das erste bleibt",
+    pruefe() {
+      const faecher = [
+        { name: "Mathe", punkte: 12 },
+        { name: "mathe", punkte: 5 },
+        { name: "Deutsch", punkte: 10 },
+      ];
+      const zustand = rechner.ladeZustand(rechner.serialisiereZustand(faecher, ""));
+      erwarteGleich(zustand.faecher.map((fach) => `${fach.name}:${fach.punkte}`).join(","), "Mathe:12,Deutsch:10");
+    },
+  },
+  {
     name: "Leere Liste ergibt keinen Durchschnitt und den Strich als Text",
     pruefe() {
       erwarteGleich(rechner.durchschnitt([]), null);
