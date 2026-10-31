@@ -4,6 +4,12 @@
 const MIN_PUNKTE = 0;
 const MAX_PUNKTE = 15;
 
+// Erlaubt nur normale Dezimalzahlen mit Punkt oder Komma, z. B. "12", "-1" oder "1,6".
+// Number() allein würde auch "0x0A" oder "1e1" annehmen.
+function istDezimalzahl(text) {
+  return /^-?\d+([.,]\d+)?$/.test(text);
+}
+
 // Prüft den Fachnamen. Gibt { ok: true, wert } oder { ok: false, fehler } zurück.
 function pruefeName(eingabe) {
   const name = String(eingabe ?? "").trim();
@@ -20,10 +26,10 @@ function pruefePunkte(eingabe) {
   if (text === "") {
     return { ok: false, fehler: "Bitte Punkte eingeben." };
   }
-  const zahl = Number(text.replace(",", "."));
-  if (Number.isNaN(zahl)) {
+  if (!istDezimalzahl(text)) {
     return { ok: false, fehler: "Punkte müssen eine Zahl sein." };
   }
+  const zahl = Number(text.replace(",", "."));
   if (zahl < MIN_PUNKTE) {
     return { ok: false, fehler: "Punkte dürfen nicht unter 0 liegen." };
   }
@@ -64,10 +70,10 @@ function pruefeZielNote(eingabe) {
   if (text === "") {
     return { ok: true, wert: null };
   }
-  const zahl = Number(text.replace(",", "."));
-  if (Number.isNaN(zahl)) {
+  if (!istDezimalzahl(text)) {
     return { ok: false, fehler: "Die Zielnote muss eine Zahl sein." };
   }
+  const zahl = Number(text.replace(",", "."));
   if (zahl < BESTE_NOTE) {
     return { ok: false, fehler: "Die Zielnote darf nicht besser als 1,0 sein." };
   }

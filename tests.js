@@ -39,6 +39,20 @@ const TESTFAELLE = [
       erwarteGleich(ergebnis.fehler, fehler);
     },
   })),
+  ...["0x0A", "1e1", "0b11", "Infinity"].flatMap((eingabe) => [
+    {
+      name: `Punkte ${JSON.stringify(eingabe)} werden als keine Zahl abgelehnt`,
+      pruefe() {
+        erwarteGleich(rechner.pruefePunkte(eingabe).fehler, "Punkte müssen eine Zahl sein.");
+      },
+    },
+    {
+      name: `Zielnote ${JSON.stringify(eingabe)} wird als keine Zahl abgelehnt`,
+      pruefe() {
+        erwarteGleich(rechner.pruefeZielNote(eingabe).fehler, "Die Zielnote muss eine Zahl sein.");
+      },
+    },
+  ]),
   ...[["12,0", 12], [" 12 ", 12], ["12.0", 12]].map(([eingabe, punkte]) => ({
     name: `Punkte ${JSON.stringify(eingabe)} werden als ${punkte} angenommen`,
     pruefe() {
