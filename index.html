@@ -14,7 +14,9 @@
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 0.4rem; border-bottom: 1px solid #ddd; }
     #schnitt { font-size: 1.5rem; margin-top: 1.5rem; }
-    #punkte, #ziel { width: 5rem; }
+    #punkte, #faktor, #offen, #ziel { width: 5rem; }
+    #noch-noetig { font-size: 1.2rem; min-height: 1.5em; }
+    #noch-noetig.unter-ziel { color: #c62828; font-weight: bold; }
     #ziel { border: 3px solid #999; }
     #ziel.unter-ziel { background: #ffcdd2; border-color: #c62828; }
     #ziel.ziel-erreicht { background: #c8e6c9; border-color: #2e7d32; }
@@ -29,11 +31,19 @@
   <form id="fach-formular" novalidate>
     <label>
       Fach
-      <input id="name" type="text" autocomplete="off">
+      <input id="name" name="name" type="text" autocomplete="off">
     </label>
     <label>
       Punkte (0–15)
-      <input id="punkte" type="text" inputmode="numeric" autocomplete="off">
+      <input id="punkte" name="punkte" type="text" inputmode="numeric" autocomplete="off">
+    </label>
+    <label>
+      Faktor
+      <input id="faktor" name="faktor" type="text" inputmode="decimal" value="1" autocomplete="off">
+    </label>
+    <label>
+      Offene Klausuren
+      <input id="offen" name="offen" type="text" inputmode="numeric" value="0" autocomplete="off">
     </label>
     <button type="submit">Hinzufügen</button>
   </form>
@@ -41,7 +51,7 @@
 
   <table>
     <thead>
-      <tr><th>Fach</th><th>Punkte</th><th></th></tr>
+      <tr><th>Fach</th><th>Punkte</th><th>Faktor</th><th>Offene Klausuren</th><th></th></tr>
     </thead>
     <tbody id="liste"></tbody>
   </table>
@@ -55,6 +65,14 @@
   </label>
   <p id="ziel-abstand" role="status"></p>
 
+  <h2>Was brauche ich noch?</h2>
+  <p id="noch-noetig" role="status"></p>
+  <p>
+    Trag bei jedem Fach ein, wie viele Klausuren noch offen sind, und gib einen Zielschnitt ein.
+    Vereinfachte Annahme: Die Punkte eines Fachs zählen wie eine Klausur, jede offene Klausur zählt genauso viel,
+    beides mit dem Faktor des Fachs.
+  </p>
+
   <button id="zuruecksetzen" type="button">Zurücksetzen</button>
 
   <script src="rechner.js"></script>
@@ -62,7 +80,6 @@
     const faecher = [];
     const formular = document.getElementById("fach-formular");
     const nameFeld = document.getElementById("name");
-    const punkteFeld = document.getElementById("punkte");
     const fehlerAnzeige = document.getElementById("fehler");
     const liste = document.getElementById("liste");
     const zielFeld = document.getElementById("ziel");
@@ -75,6 +92,8 @@
         const zeile = liste.insertRow();
         zeile.insertCell().textContent = fach.name;
         zeile.insertCell().textContent = fach.punkte;
+        zeile.insertCell().textContent = mitKomma(fach.faktor);
+        zeile.insertCell().textContent = fach.offen;
         const entfernen = zeile.insertCell().appendChild(document.createElement("button"));
         entfernen.textContent = "Entfernen";
         entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
@@ -97,6 +116,10 @@
       let klasse = "";
       if (ziel.erreicht !== null) klasse = ziel.erreicht ? "ziel-erreicht" : "unter-ziel";
       zielFeld.className = zielAbstand.className = klasse;
+      const noch = nochNoetig(faecher, zielFeld.value);
+      const nochAnzeige = document.getElementById("noch-noetig");
+      nochAnzeige.textContent = noch.text;
+      nochAnzeige.className = noch.erreichbar === false ? "unter-ziel" : "";
 
       // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
       try {
@@ -106,15 +129,13 @@
 
     formular.addEventListener("submit", (event) => {
       event.preventDefault();
-      const name = pruefeName(nameFeld.value, faecher);
-      const punkte = pruefePunkte(punkteFeld.value);
-      if (!name.ok || !punkte.ok) {
-        // Zuerst den Fehler beim Namen zeigen, sonst den bei den Punkten.
-        fehlerAnzeige.textContent = name.ok ? punkte.fehler : name.fehler;
-        (name.ok ? punkteFeld : nameFeld).focus();
+      const fach = pruefeFach(Object.fromEntries(new FormData(formular)), faecher);
+      if (!fach.ok) {
+        fehlerAnzeige.textContent = fach.fehler;
+        formular.elements[fach.feld].focus();
         return;
       }
-      faecher.push({ name: name.wert, punkte: punkte.wert });
+      faecher.push(fach.wert);
       fehlerAnzeige.textContent = "";
       formular.reset();
       nameFeld.focus();
