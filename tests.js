@@ -23,12 +23,90 @@ const TESTFAELLE = [
       erwarteGleich(rechner.formatiereSchnitt(rechner.durchschnitt(faecher)), "12,00");
     },
   },
-  ...["16", "-1", "", "7,5"].map((eingabe) => ({
-    name: `Punkte ${JSON.stringify(eingabe)} werden abgelehnt`,
+  ...[
+    ["16", "Punkte dürfen nicht über 15 liegen."],
+    ["-1", "Punkte dürfen nicht unter 0 liegen."],
+    ["", "Bitte Punkte eingeben."],
+    ["7,5", "Punkte müssen eine ganze Zahl sein."],
+    ["abc", "Punkte müssen eine Zahl sein."],
+    [null, "Bitte Punkte eingeben."],
+    [undefined, "Bitte Punkte eingeben."],
+  ].map(([eingabe, fehler]) => ({
+    name: `Punkte ${JSON.stringify(eingabe)} werden mit passender Meldung abgelehnt`,
     pruefe() {
-      erwarteGleich(rechner.pruefePunkte(eingabe).ok, false);
+      const ergebnis = rechner.pruefePunkte(eingabe);
+      erwarteGleich(ergebnis.ok, false);
+      erwarteGleich(ergebnis.fehler, fehler);
     },
   })),
+  ...[["12,0", 12], [" 12 ", 12], ["12.0", 12]].map(([eingabe, punkte]) => ({
+    name: `Punkte ${JSON.stringify(eingabe)} werden als ${punkte} angenommen`,
+    pruefe() {
+      erwarteGleich(rechner.pruefePunkte(eingabe).wert, punkte);
+    },
+  })),
+  ...[["", "Bitte einen Fachnamen eingeben."], ["   ", "Bitte einen Fachnamen eingeben."], [null, "Bitte einen Fachnamen eingeben."], [undefined, "Bitte einen Fachnamen eingeben."]].map(
+    ([eingabe, fehler]) => ({
+      name: `Fachname ${JSON.stringify(eingabe)} wird abgelehnt`,
+      pruefe() {
+        const ergebnis = rechner.pruefeName(eingabe);
+        erwarteGleich(ergebnis.ok, false);
+        erwarteGleich(ergebnis.fehler, fehler);
+      },
+    })
+  ),
+  {
+    name: "Fachname wird getrimmt",
+    pruefe() {
+      const ergebnis = rechner.pruefeName("  Mathe ");
+      erwarteGleich(ergebnis.ok, true);
+      erwarteGleich(ergebnis.wert, "Mathe");
+    },
+  },
+  {
+    name: "Leere Liste ergibt keinen Durchschnitt und den Strich als Text",
+    pruefe() {
+      erwarteGleich(rechner.durchschnitt([]), null);
+      erwarteGleich(rechner.formatiereSchnitt(null), "–");
+    },
+  },
+  {
+    name: "Leeres Zielnote-Feld bedeutet kein Ziel",
+    pruefe() {
+      const ergebnis = rechner.pruefeZielNote("");
+      erwarteGleich(ergebnis.ok, true);
+      erwarteGleich(ergebnis.wert, null);
+    },
+  },
+  {
+    name: "Zielnote 1.5 mit Punkt wird angenommen, abc abgelehnt",
+    pruefe() {
+      erwarteGleich(rechner.pruefeZielNote("1.5").wert, 1.5);
+      erwarteGleich(rechner.pruefeZielNote("abc").ok, false);
+    },
+  },
+  {
+    name: "noteZuPunkten rechnet 1,0 zu 14 und 4,0 zu 5 um",
+    pruefe() {
+      erwarteGleich(rechner.noteZuPunkten(1), 14);
+      erwarteGleich(rechner.noteZuPunkten(4), 5);
+      erwarteGleich(rechner.noteZuPunkten(1.6), 12.2);
+    },
+  },
+  {
+    name: "Vergleich mit Ziel: unter Ziel, genau erreicht, fehlende Werte",
+    pruefe() {
+      const unter = rechner.vergleicheMitZiel(11, 12);
+      erwarteGleich(unter.erreicht, false);
+      erwarteGleich(rechner.formatiereAbstand(unter), "1,00 Punkte unter Ziel");
+      const genau = rechner.vergleicheMitZiel(12.2, rechner.noteZuPunkten(1.6));
+      erwarteGleich(genau.erreicht, true);
+      erwarteGleich(rechner.formatiereAbstand(genau), "Ziel genau erreicht");
+      erwarteGleich(rechner.vergleicheMitZiel(null, 12), null);
+      erwarteGleich(rechner.vergleicheMitZiel(12, null), null);
+      erwarteGleich(rechner.formatiereAbstand(null), "");
+    },
+  },
   ...[0, 15].map((punkte) => ({
     name: `Punkte ${punkte} werden angenommen`,
     pruefe() {
@@ -112,6 +190,30 @@ const TESTFAELLE = [
       erwarteGleich(zustand.ziel, "2,0");
     },
   },
+  {
+    name: "Gespeicherte Fächer mit Name als Zahl, Objekt oder Array werden verworfen",
+    pruefe() {
+      const gespeichert = JSON.stringify({
+        faecher: [
+          { name: 123, punkte: 5 },
+          { name: {}, punkte: 5 },
+          { name: ["a"], punkte: 5 },
+          { punkte: 5 },
+          { name: "Mathe", punkte: 12 },
+        ],
+        ziel: "",
+      });
+      const zustand = rechner.ladeZustand(gespeichert);
+      erwarteGleich(zustand.faecher.map((fach) => fach.name).join(","), "Mathe");
+    },
+  },
+  ...[7.5, -1].map((punkte) => ({
+    name: `Gespeicherte Punkte ${punkte} werden verworfen`,
+    pruefe() {
+      const gespeichert = rechner.serialisiereZustand([{ name: "Mathe", punkte }], "");
+      erwarteGleich(rechner.ladeZustand(gespeichert).faecher.length, 0);
+    },
+  })),
   ...["5,0", "abc"].map((zielNote) => ({
     name: `Gespeicherte Zielnote ${JSON.stringify(zielNote)} wird verworfen, gültige Fächer bleiben`,
     pruefe() {

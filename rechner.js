@@ -131,7 +131,12 @@ function ladeZustand(text) {
   }
   const faecher = [];
   for (const eintrag of daten.faecher) {
-    if (eintrag === null || typeof eintrag !== "object" || typeof eintrag.punkte !== "number") {
+    if (
+      eintrag === null ||
+      typeof eintrag !== "object" ||
+      typeof eintrag.name !== "string" ||
+      typeof eintrag.punkte !== "number"
+    ) {
       continue;
     }
     const name = pruefeName(eintrag.name);
