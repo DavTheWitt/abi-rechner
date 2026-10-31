@@ -125,6 +125,54 @@ const TESTFAELLE = [
     ["5,0", "abc", 2, null, undefined].map((ziel) => [ziel, { faecher: [fach("Mathe", 12)], ziel: "" }])),
 ];
 
+const aufgabe = (text, datum, erledigt = false) => ({ text, datum, erledigt });
+const klausur = (text, datum) => ({ text, datum });
+
+TESTFAELLE.push(
+  ...faelle("Datum", (eingabe) => wertOderFehler(rechner.pruefeDatum(eingabe)), [
+    ["2026-11-05", "2026-11-05"], [" 2026-11-05 ", "2026-11-05"], ["2028-02-29", "2028-02-29"],
+    ...["", null, undefined].map((eingabe) => [eingabe, "Bitte ein Datum eingeben."]),
+    ...["2026-02-29", "2026-02-30", "2026-13-01", "2026-00-10", "2026-1-5", "05.11.2026", "morgen", "2026-11-05T10:00"]
+      .map((eingabe) => [eingabe, "Bitte ein gültiges Datum eingeben."]),
+  ]),
+  ...faelle("Planer-Eintrag", rechner.pruefeEintrag, [
+    [{ text: " Mathe S. 42 ", datum: "2026-11-05" }, { ok: true, wert: { text: "Mathe S. 42", datum: "2026-11-05" } }],
+    [{ text: "  ", datum: "" }, { ok: false, fehler: "Bitte eintragen, worum es geht.", feld: "text" }],
+    [{ text: "Mathe", datum: "" }, { ok: false, fehler: "Bitte ein Datum eingeben.", feld: "datum" }],
+  ]),
+  ...faelle("Datum anzeigen", rechner.formatiereDatum, [["2026-11-05", "Do, 05.11.2026"], ["2027-01-03", "So, 03.01.2027"]]),
+
+  // Heute ist Samstag, der 31.10.2026; 7 Tage reichen bis Samstag, den 07.11.
+  ["Demnächst: überfällig, heute, morgen und bis 7 Tage voraus, nach Datum sortiert",
+    () => rechner.demnaechst(
+      [aufgabe("Bio", "2026-10-29"), aufgabe("Physik", "2026-10-30", true), aufgabe("Englisch", "2026-11-08"), aufgabe("Deutsch", "2026-11-01")],
+      [klausur("Geschichte", "2026-11-07"), klausur("Chemie", "2026-10-30"), klausur("Mathe", "2026-10-31")],
+      "2026-10-31"),
+    [
+      { text: "Überfällig seit Do, 29.10.2026 · Hausaufgabe: Bio", ueberfaellig: true },
+      { text: "Heute · Klausur: Mathe", ueberfaellig: false },
+      { text: "Morgen · Hausaufgabe: Deutsch", ueberfaellig: false },
+      { text: "Sa, 07.11.2026 · Klausur: Geschichte", ueberfaellig: false },
+    ]],
+  ["Demnächst über den Jahreswechsel",
+    () => rechner.demnaechst([], [klausur("Mathe", "2027-01-05"), klausur("Kunst", "2027-01-04")], "2026-12-28"),
+    [{ text: "Mo, 04.01.2027 · Klausur: Kunst", ueberfaellig: false }]],
+  ["Demnächst ohne Einträge ist leer", () => rechner.demnaechst([], [], "2026-10-31"), []],
+
+  ...faelle("Gespeicherter Planer", rechner.ladePlaner,
+    [null, "", "{kaputt", "[]", '{"hausaufgaben":"x","klausuren":5}'].map((text) => [text, { hausaufgaben: [], klausuren: [] }])),
+  ["Planer speichern und laden ergibt dasselbe",
+    () => rechner.ladePlaner(JSON.stringify({ hausaufgaben: [aufgabe("Bio", "2026-11-02", true)], klausuren: [klausur("Mathe", "2026-11-05")] })),
+    { hausaufgaben: [aufgabe("Bio", "2026-11-02", true)], klausuren: [klausur("Mathe", "2026-11-05")] }],
+  ["Ungültige gespeicherte Planer-Einträge werden verworfen",
+    () => rechner.ladePlaner(JSON.stringify({
+      hausaufgaben: [aufgabe("", "2026-11-02"), aufgabe("Bio", "2026-02-30"), aufgabe(5, "2026-11-02"), null, "Bio",
+        { text: "Kunst", datum: "2026-11-03", erledigt: "ja" }],
+      klausuren: [klausur("Mathe", 20261105), klausur("Physik", "2026-11-06"), { ...klausur("Chemie", "2026-11-07"), extra: 1 }],
+    })),
+    { hausaufgaben: [aufgabe("Kunst", "2026-11-03", false)], klausuren: [klausur("Physik", "2026-11-06"), klausur("Chemie", "2026-11-07")] }],
+);
+
 // Führt alle Testfälle aus. Gibt [{ name, bestanden, meldung }] zurück.
 // Verglichen wird über JSON, damit auch Objekte und Listen verglichen werden können.
 function fuehreTestsAus() {

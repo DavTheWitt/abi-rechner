@@ -17,6 +17,9 @@
     #punkte, #faktor, #offen, #ziel { width: 5rem; }
     #noch-noetig { font-size: 1.2rem; min-height: 1.5em; }
     #noch-noetig.unter-ziel { color: #c62828; font-weight: bold; }
+    form [role=alert] { flex-basis: 100%; margin: 0; color: #b00020; }
+    .erledigt label { text-decoration: line-through; color: #666; }
+    .ueberfaellig { color: #c62828; font-weight: bold; }
     #ziel { border: 3px solid #999; }
     #ziel.unter-ziel { background: #ffcdd2; border-color: #c62828; }
     #ziel.ziel-erreicht { background: #c8e6c9; border-color: #2e7d32; }
@@ -27,6 +30,12 @@
 </head>
 <body>
   <h1>Abi-Rechner</h1>
+
+  <h2>Demnächst</h2>
+  <ul id="demnaechst"></ul>
+  <p id="nichts-demnaechst">In den nächsten 7 Tagen steht nichts an.</p>
+
+  <h2>Noten</h2>
 
   <form id="fach-formular" novalidate>
     <label>
@@ -75,9 +84,40 @@
 
   <button id="zuruecksetzen" type="button">Zurücksetzen</button>
 
+  <h2>Hausaufgaben</h2>
+  <form id="hausaufgaben-formular" novalidate>
+    <label>
+      Was ist zu tun?
+      <input name="text" type="text" maxlength="200" autocomplete="off">
+    </label>
+    <label>
+      Bis wann?
+      <input name="datum" type="date">
+    </label>
+    <button type="submit">Eintragen</button>
+    <p role="alert"></p>
+  </form>
+  <ul id="hausaufgaben"></ul>
+
+  <h2>Klausurtermine</h2>
+  <form id="klausuren-formular" novalidate>
+    <label>
+      Klausur
+      <input name="text" type="text" maxlength="200" autocomplete="off">
+    </label>
+    <label>
+      Datum
+      <input name="datum" type="date">
+    </label>
+    <button type="submit">Eintragen</button>
+    <p role="alert"></p>
+  </form>
+  <ul id="klausuren"></ul>
+
   <script src="rechner.js"></script>
   <script>
     const faecher = [];
+    const planer = { hausaufgaben: [], klausuren: [] };
     const formular = document.getElementById("fach-formular");
     const nameFeld = document.getElementById("name");
     const fehlerAnzeige = document.getElementById("fehler");
@@ -85,25 +125,56 @@
     const zielFeld = document.getElementById("ziel");
     const zielAbstand = document.getElementById("ziel-abstand");
 
+    // Knopf, der eintraege[index] entfernt. Danach steht der Fokus auf dem Knopf, der jetzt an dieser Stelle steht,
+    // sonst auf ersatz; ohne das spränge er an den Seitenanfang.
+    function entfernenKnopf(eintraege, index, name, ersatz) {
+      const knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.textContent = "Entfernen";
+      knopf.setAttribute("aria-label", `Entfernen: ${name}`);
+      knopf.onclick = (event) => {
+        if (event.detail > 1) return; // Doppelklick: der zweite Klick träfe sonst schon den nächsten Eintrag
+        const eintragsListe = knopf.closest("tbody, ul");
+        eintraege.splice(index, 1);
+        zeichne();
+        (eintragsListe.children[Math.min(index, eintraege.length - 1)]?.querySelector("button") ?? ersatz).focus();
+      };
+      return knopf;
+    }
+
+    // Hausaufgaben (mit Haken für erledigt) oder Klausurtermine als Liste.
+    function zeichneEintraege(art) {
+      const eintragsListe = document.getElementById(art);
+      const ersatz = document.getElementById(`${art}-formular`).elements.text;
+      eintragsListe.replaceChildren();
+      planer[art].forEach((eintrag, index) => {
+        const zeile = eintragsListe.appendChild(document.createElement("li"));
+        const beschreibung = `${formatiereDatum(eintrag.datum)}: ${eintrag.text}`;
+        if (art === "hausaufgaben") {
+          const haken = document.createElement("input");
+          haken.type = "checkbox";
+          haken.checked = eintrag.erledigt;
+          haken.onchange = () => {
+            eintrag.erledigt = haken.checked;
+            zeichne();
+            eintragsListe.children[index].querySelector("input").focus(); // Fokus bleibt nach dem Neuzeichnen am Haken
+          };
+          zeile.appendChild(document.createElement("label")).append(haken, beschreibung);
+          zeile.className = eintrag.erledigt ? "erledigt" : "";
+        } else {
+          zeile.append(beschreibung);
+        }
+        zeile.append(entfernenKnopf(planer[art], index, eintrag.text, ersatz));
+      });
+    }
+
     // Zeigt den ganzen Zustand neu an und speichert ihn.
     function zeichne() {
       liste.replaceChildren();
       faecher.forEach((fach, index) => {
         const zeile = liste.insertRow();
-        zeile.insertCell().textContent = fach.name;
-        zeile.insertCell().textContent = fach.punkte;
-        zeile.insertCell().textContent = mitKomma(fach.faktor);
-        zeile.insertCell().textContent = fach.offen;
-        const entfernen = zeile.insertCell().appendChild(document.createElement("button"));
-        entfernen.textContent = "Entfernen";
-        entfernen.setAttribute("aria-label", `Entfernen: ${fach.name}`);
-        entfernen.onclick = (event) => {
-          if (event.detail > 1) return; // Doppelklick: der zweite Klick träfe sonst schon das nächste Fach
-          faecher.splice(index, 1);
-          zeichne();
-          // Fokus auf den Knopf, der jetzt an dieser Stelle steht; sonst springt er an den Seitenanfang.
-          (liste.rows[Math.min(index, faecher.length - 1)]?.querySelector("button") ?? nameFeld).focus();
-        };
+        for (const wert of [fach.name, fach.punkte, mitKomma(fach.faktor), fach.offen]) zeile.insertCell().textContent = wert;
+        zeile.insertCell().append(entfernenKnopf(faecher, index, fach.name, nameFeld));
       });
       document.getElementById("leer-hinweis").hidden = faecher.length > 0;
 
@@ -121,9 +192,23 @@
       nochAnzeige.textContent = noch.text;
       nochAnzeige.className = noch.erreichbar === false ? "unter-ziel" : "";
 
+      zeichneEintraege("hausaufgaben");
+      zeichneEintraege("klausuren");
+      const jetzt = new Date(); // lokales Datum, toISOString wäre UTC und nachts einen Tag daneben
+      const heute = [jetzt.getFullYear(), jetzt.getMonth() + 1, jetzt.getDate()].map((zahl) => String(zahl).padStart(2, "0")).join("-");
+      const anstehend = demnaechst(planer.hausaufgaben, planer.klausuren, heute);
+      document.getElementById("demnaechst").replaceChildren(...anstehend.map(({ text, ueberfaellig }) => {
+        const zeile = document.createElement("li");
+        zeile.textContent = text;
+        zeile.className = ueberfaellig ? "ueberfaellig" : "";
+        return zeile;
+      }));
+      document.getElementById("nichts-demnaechst").hidden = anstehend.length > 0;
+
       // localStorage kann gesperrt sein (z. B. im privaten Modus); dann läuft die Seite ohne Speicherung.
       try {
         localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify({ faecher, ziel: zielFeld.value }));
+        localStorage.setItem(PLANER_SCHLUESSEL, JSON.stringify(planer));
       } catch {}
     }
 
@@ -144,6 +229,25 @@
 
     zielFeld.addEventListener("input", zeichne);
 
+    for (const art of ["hausaufgaben", "klausuren"]) {
+      const planerFormular = document.getElementById(`${art}-formular`);
+      planerFormular.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const eintrag = pruefeEintrag(Object.fromEntries(new FormData(planerFormular)));
+        planerFormular.querySelector("[role=alert]").textContent = eintrag.ok ? "" : eintrag.fehler;
+        if (!eintrag.ok) {
+          planerFormular.elements[eintrag.feld].focus();
+          return;
+        }
+        // Hausaufgaben bekommen den Haken für erledigt, Klausurtermine nicht.
+        planer[art].push(art === "hausaufgaben" ? { ...eintrag.wert, erledigt: false } : eintrag.wert);
+        planer[art].sort((a, b) => a.datum.localeCompare(b.datum));
+        planerFormular.reset();
+        planerFormular.elements.text.focus();
+        zeichne();
+      });
+    }
+
     document.getElementById("zuruecksetzen").addEventListener("click", () => {
       if (!confirm("Alle Fächer und die Zielnote löschen?")) return;
       faecher.length = 0;
@@ -157,6 +261,7 @@
       const zustand = ladeZustand(localStorage.getItem(SPEICHER_SCHLUESSEL));
       faecher.push(...zustand.faecher);
       zielFeld.value = zustand.ziel;
+      Object.assign(planer, ladePlaner(localStorage.getItem(PLANER_SCHLUESSEL)));
     } catch {}
     zeichne();
   </script>

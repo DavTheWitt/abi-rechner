@@ -3,6 +3,7 @@
 // Alle pruefe-Funktionen geben { ok: true, wert } oder { ok: false, fehler } zurück.
 
 const SPEICHER_SCHLUESSEL = "abi-rechner";
+const PLANER_SCHLUESSEL = "abi-rechner-planer";
 
 const abgelehnt = (fehler) => ({ ok: false, fehler });
 
@@ -68,17 +69,70 @@ function pruefeOffeneKlausuren(eingabe) {
   return { ok: true, wert: zahl };
 }
 
-// Prüft alle Eingaben eines Fachs. Beim ersten Fehler steht in feld, zu welcher Eingabe er gehört.
+// Fasst die Prüfungen mehrerer Eingaben zusammen. Beim ersten Fehler steht in feld, zu welcher Eingabe er gehört.
+function pruefeAlle(pruefungen) {
+  const liste = Object.entries(pruefungen);
+  const fehler = liste.find(([, pruefung]) => !pruefung.ok);
+  if (fehler) return { ok: false, fehler: fehler[1].fehler, feld: fehler[0] };
+  return { ok: true, wert: Object.fromEntries(liste.map(([feld, pruefung]) => [feld, pruefung.wert])) };
+}
+
 function pruefeFach(eingaben, faecher) {
-  const pruefungen = Object.entries({
+  return pruefeAlle({
     name: pruefeName(eingaben.name, faecher),
     punkte: pruefePunkte(eingaben.punkte),
     faktor: pruefeFaktor(eingaben.faktor),
     offen: pruefeOffeneKlausuren(eingaben.offen),
   });
-  const fehler = pruefungen.find(([, pruefung]) => !pruefung.ok);
-  if (fehler) return { ok: false, fehler: fehler[1].fehler, feld: fehler[0] };
-  return { ok: true, wert: Object.fromEntries(pruefungen.map(([feld, pruefung]) => [feld, pruefung.wert])) };
+}
+
+// Datum im Format JJJJ-MM-TT, wie es <input type="date"> liefert.
+function pruefeDatum(eingabe) {
+  const text = String(eingabe ?? "").trim();
+  if (text === "") return abgelehnt("Bitte ein Datum eingeben.");
+  // Der Rückweg über toISOString fängt Tage ab, die es nicht gibt: Date schiebt den 30.02. in den März.
+  const datum = new Date(`${text}T12:00:00Z`);
+  const gueltig = /^\d{4}-\d{2}-\d{2}$/.test(text) && !Number.isNaN(datum.getTime()) && datum.toISOString().startsWith(text);
+  return gueltig ? { ok: true, wert: text } : abgelehnt("Bitte ein gültiges Datum eingeben.");
+}
+
+// Ein Eintrag im Planer: Hausaufgabe oder Klausur, jeweils mit Text und Datum.
+function pruefeEintrag(eingaben) {
+  const text = String(eingaben.text ?? "").trim();
+  return pruefeAlle({
+    text: text === "" ? abgelehnt("Bitte eintragen, worum es geht.") : { ok: true, wert: text },
+    datum: pruefeDatum(eingaben.datum),
+  });
+}
+
+function plusTage(datum, tage) {
+  const tag = new Date(`${datum}T12:00:00Z`); // mittags in UTC, damit die Zeitumstellung keinen Tag verschiebt
+  tag.setUTCDate(tag.getUTCDate() + tage);
+  return tag.toISOString().slice(0, 10);
+}
+
+// "2026-11-05" → "Do, 05.11.2026"
+function formatiereDatum(datum) {
+  const [jahr, monat, tag] = datum.split("-");
+  const wochentag = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"][new Date(`${datum}T12:00:00Z`).getUTCDay()];
+  return `${wochentag}, ${tag}.${monat}.${jahr}`;
+}
+
+// Was in den nächsten 7 Tagen ansteht (heute eingerechnet), dazu überfällige, nicht erledigte Hausaufgaben.
+// heute im Format JJJJ-MM-TT; das Ergebnis ist nach Datum sortiert.
+function demnaechst(hausaufgaben, klausuren, heute) {
+  const bis = plusTage(heute, 7);
+  const wann = (datum) => {
+    if (datum < heute) return `Überfällig seit ${formatiereDatum(datum)}`;
+    if (datum === heute) return "Heute";
+    return datum === plusTage(heute, 1) ? "Morgen" : formatiereDatum(datum);
+  };
+  return [
+    ...hausaufgaben.filter((aufgabe) => !aufgabe.erledigt && aufgabe.datum <= bis).map(({ datum, text }) => ({ datum, text: `Hausaufgabe: ${text}` })),
+    ...klausuren.filter(({ datum }) => datum >= heute && datum <= bis).map(({ datum, text }) => ({ datum, text: `Klausur: ${text}` })),
+  ]
+    .sort((a, b) => a.datum.localeCompare(b.datum))
+    .map(({ datum, text }) => ({ text: `${wann(datum)} · ${text}`, ueberfaellig: datum < heute }));
 }
 
 // Ein leeres Feld bedeutet „kein Ziel“ und ergibt wert null.
@@ -166,10 +220,25 @@ function ladeZustand(text) {
   return { faecher, ziel };
 }
 
+// Liest den gespeicherten Planer { hausaufgaben, klausuren }. Einträge ohne Text oder gültiges Datum werden verworfen.
+function ladePlaner(text) {
+  let daten;
+  try {
+    daten = JSON.parse(text);
+  } catch {} // kaputtes JSON ergibt einen leeren Planer
+  const gueltig = (eintrag) => typeof eintrag?.text === "string" && typeof eintrag.datum === "string" && pruefeEintrag(eintrag).ok;
+  const liste = (eintraege) => (Array.isArray(eintraege) ? eintraege.filter(gueltig) : []);
+  return {
+    hausaufgaben: liste(daten?.hausaufgaben).map(({ text, datum, erledigt }) => ({ text, datum, erledigt: erledigt === true })),
+    klausuren: liste(daten?.klausuren).map(({ text, datum }) => ({ text, datum })),
+  };
+}
+
 // Für Tests mit Node.
 if (typeof module !== "undefined") {
   module.exports = {
     pruefeName, pruefePunkte, pruefeFaktor, pruefeOffeneKlausuren, pruefeFach, pruefeZielNote,
     durchschnitt, formatiereSchnitt, zielStatus, nochNoetig, ladeZustand,
+    pruefeDatum, pruefeEintrag, formatiereDatum, demnaechst, ladePlaner,
   };
 }
