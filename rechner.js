@@ -3,6 +3,8 @@
 
 const MIN_PUNKTE = 0;
 const MAX_PUNKTE = 15;
+const BESTE_NOTE = 1;
+const SCHLECHTESTE_NOTE = 4;
 
 // Erlaubt nur normale Dezimalzahlen mit Punkt oder Komma, z. B. "12", "-1" oder "1,6".
 // Number() allein würde auch "0x0A" oder "1e1" annehmen.
@@ -42,6 +44,12 @@ function pruefePunkte(eingabe) {
   return { ok: true, wert: zahl };
 }
 
+// Prüft, ob es ein Fach mit diesem Namen schon gibt. Groß- und Kleinschreibung zählt nicht.
+function istDoppelt(faecher, name) {
+  const gesucht = name.trim().toLowerCase();
+  return faecher.some((fach) => fach.name.trim().toLowerCase() === gesucht);
+}
+
 // Durchschnitt einer Liste von Fächern ({ name, punkte }).
 // Gibt null zurück, wenn die Liste leer ist.
 function durchschnitt(faecher) {
@@ -59,9 +67,6 @@ function formatiereSchnitt(wert) {
   }
   return wert.toFixed(2).replace(".", ",");
 }
-
-const BESTE_NOTE = 1;
-const SCHLECHTESTE_NOTE = 4;
 
 // Prüft die Zielnote. Erlaubt sind Noten von 1,0 bis 4,0, auch mit Nachkommastellen.
 // Ein leeres Feld bedeutet „kein Ziel“ und gibt { ok: true, wert: null } zurück.
@@ -160,6 +165,7 @@ if (typeof module !== "undefined") {
   module.exports = {
     pruefeName,
     pruefePunkte,
+    istDoppelt,
     durchschnitt,
     formatiereSchnitt,
     pruefeZielNote,

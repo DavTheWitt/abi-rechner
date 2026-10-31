@@ -78,6 +78,16 @@ const TESTFAELLE = [
     },
   },
   {
+    name: "Doppelte Fächer werden erkannt, auch bei anderer Schreibweise",
+    pruefe() {
+      const faecher = [{ name: "Mathe", punkte: 10 }];
+      erwarteGleich(rechner.istDoppelt(faecher, "Mathe"), true);
+      erwarteGleich(rechner.istDoppelt(faecher, "mathe"), true);
+      erwarteGleich(rechner.istDoppelt(faecher, "Deutsch"), false);
+      erwarteGleich(rechner.istDoppelt([], "Mathe"), false);
+    },
+  },
+  {
     name: "Leere Liste ergibt keinen Durchschnitt und den Strich als Text",
     pruefe() {
       erwarteGleich(rechner.durchschnitt([]), null);
