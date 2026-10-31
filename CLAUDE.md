@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Runde 3 ist umgesetzt (Speichern im localStorage und Zurücksetzen). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
+Runden 1 bis 6 (zuletzt: Design fürs Handy) und der Planer (Hausaufgaben, Klausurtermine, „Demnächst“) sind umgesetzt. Login, Datenbank und echte Push-Nachrichten sind bewusst weggelassen (Begründung in der README). Die geplanten Runden stehen in der `README.md`. Es gibt kein Build-System. Tests für `rechner.js` sind vorhanden (`tests.js`).
 
 - Code-Review mit dem Subagent `code-reviewer` ist erledigt (Stand 31.10.2026): Name-Typ beim Laden, strenge Zahlprüfung und fehlende Tests sind behoben.
 - Noch offene Funde stehen in `OFFENE_PUNKTE.md`.
@@ -25,5 +25,5 @@ Runde 3 ist umgesetzt (Speichern im localStorage und Zurücksetzen). Die geplant
 ## Architecture
 
 - `rechner.js` enthält nur die Rechenlogik und greift nie auf die Seite zu.
-- `index.html` nimmt die Eingaben entgegen, lässt sie von `rechner.js` prüfen, zeigt Liste und Durchschnitt an und speichert den Zustand im localStorage.
+- `index.html` nimmt die Eingaben entgegen, lässt sie von `rechner.js` prüfen, zeigt alles an und speichert im localStorage (Noten unter "abi-rechner", Planer unter "abi-rechner-planer").
 - `tests.js` enthält alle Testfälle einmal; `tests.html` zeigt sie im Browser an, `node tests.js` in der Konsole.
